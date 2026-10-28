@@ -19,7 +19,17 @@ export class Capture {
     });
     const track = this.stream.getVideoTracks()[0];
     this.settings = track.getSettings();
-    this.capabilities = track.getCapabilities?.() ?? null;
+    if (this.settings.facingMode && this.settings.facingMode !== "user") {
+      this.stop();
+      throw Error(
+        "The delivered camera is not front-facing. Select a user-facing camera.",
+      );
+    }
+    try {
+      this.capabilities = track.getCapabilities?.() ?? null;
+    } catch {
+      this.capabilities = null;
+    }
     video.srcObject = this.stream;
     await video.play();
     return track;

@@ -24,7 +24,7 @@ export class Diagnostics {
       time: new Date().toISOString(),
       elapsed: performance.now(),
       type,
-      data,
+      data: structuredClone(data),
     });
     if (this.events.length > 3000) this.events.shift();
   }

@@ -82,10 +82,123 @@ export function syntheticReport() {
   return {
     provenance: "simulated; no hardware measurements",
     seed: 123,
+    deviceSensitivity: deviceSensitivity(),
     units: "mm unless named otherwise",
     sweep: perturbationSweep(),
     idealFit: fitTranslation(syntheticGaze(), defaultTransform(), 1e6),
     biasedFit: fitTranslation(syntheticGaze(3), defaultTransform()),
     noisyFit: fitTranslation(syntheticGaze(0, 0.01), defaultTransform()),
+  };
+}
+
+/** Explicit virtual-device sensitivity experiment. Each row changes one factor.
+ * This is model sensitivity, not accuracy evidence for any real tracker.
+ */
+export function deviceSensitivity() {
+  const camera = { x: -25, y: 45, z: 400 },
+    pose = defaultTransform(),
+    truth = transform(camera, pose),
+    point = { x: 0, y: 0, z: -60 },
+    expected = screenIntersection(point, truth),
+    f = 600;
+  const rows: {
+    factor: string;
+    perturbation: number;
+    unit: string;
+    eyeErrorMm: number | null;
+    projectionErrorMm: number;
+    provenance: string;
+  }[] = [];
+  const append = (
+    factor: string,
+    perturbation: number,
+    unitName: string,
+    eye: Vec3 | null,
+    screenScale = 1,
+  ) => {
+    const intersection = screenIntersection(point, eye ?? truth);
+    rows.push({
+      factor,
+      perturbation,
+      unit: unitName,
+      eyeErrorMm: eye
+        ? Math.hypot(eye.x - truth.x, eye.y - truth.y, eye.z - truth.z)
+        : null,
+      projectionErrorMm: Math.hypot(
+        intersection.x / screenScale - expected.x,
+        intersection.y / screenScale - expected.y,
+      ),
+      provenance: "simulated virtual device; all other parameters fixed",
+    });
+  };
+  for (const delta of [-0.2, -0.1, 0, 0.1, 0.2]) {
+    append("screen scale", delta * 100, "percent", null, 1 + delta);
+    append(
+      "focal length / iris depth",
+      delta * 100,
+      "percent",
+      transform({ x: camera.x, y: camera.y, z: camera.z * (1 + delta) }, pose),
+    );
+    append(
+      "principal point X",
+      delta * 100,
+      "pixels",
+      transform(
+        { ...camera, x: camera.x - (delta * 100 * camera.z) / f },
+        pose,
+      ),
+    );
+    append(
+      "face metric scale",
+      delta * 100,
+      "percent",
+      transform(
+        {
+          x: camera.x * (1 + delta),
+          y: camera.y * (1 + delta),
+          z: camera.z * (1 + delta),
+        },
+        pose,
+      ),
+    );
+    append("eye depth", delta * 100, "percent", {
+      ...truth,
+      z: truth.z * (1 + delta),
+    });
+    append("camera translation X", delta * 50, "mm", {
+      ...truth,
+      x: truth.x + delta * 50,
+    });
+    const angle = delta * 0.25;
+    append("camera yaw", (angle * 180) / Math.PI, "degrees", {
+      x: truth.x * Math.cos(angle) + truth.z * Math.sin(angle),
+      y: truth.y,
+      z: -truth.x * Math.sin(angle) + truth.z * Math.cos(angle),
+    });
+    append(
+      "eye landmark X",
+      delta * 10,
+      "pixels",
+      transform({ ...camera, x: camera.x + (delta * 10 * camera.z) / f }, pose),
+    );
+    append("tracking position noise X", delta * 10, "mm", {
+      ...truth,
+      x: truth.x + delta * 10,
+    });
+  }
+  return {
+    cameraIntrinsics: {
+      fx: f,
+      fy: f,
+      cx: 320,
+      cy: 240,
+      width: 640,
+      height: 480,
+    },
+    cameraToScreen: pose,
+    eyeCamera: camera,
+    eyeScreen: truth,
+    object: point,
+    rows,
   };
 }

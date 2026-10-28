@@ -40,12 +40,37 @@ export function validateProfile(value: unknown): Profile {
     !["nominal", "generic", "card"].includes(p.screenMode)
   )
     throw Error("Invalid version 1 calibration profile");
+  const v = p.viewport;
+  if (
+    ![v.screenWidth, v.screenHeight, v.width, v.height, v.dpr, v.scale].every(
+      (x) => Number.isFinite(x) && x > 0,
+    ) ||
+    ![v.offsetLeft, v.offsetTop, v.originX, v.originY].every(Number.isFinite) ||
+    typeof v.orientation !== "string"
+  )
+    throw Error("Invalid viewport state");
+  if (
+    p.cards.some(
+      (c) =>
+        !Number.isFinite(c.mmPerCss) ||
+        c.mmPerCss <= 0 ||
+        !Number.isFinite(c.widthCss) ||
+        c.widthCss <= 0 ||
+        !Number.isFinite(c.durationMs) ||
+        c.durationMs < 0,
+    )
+  )
+    throw Error("Invalid card calibration");
   const t = p.transform;
   if (
     !t ||
+    !Array.isArray(t.rotation) ||
     t.rotation.length !== 9 ||
     !t.rotation.every(Number.isFinite) ||
-    !Object.values(t.translation).every(Number.isFinite) ||
+    !t.translation ||
+    ![t.translation.x, t.translation.y, t.translation.z].every(
+      Number.isFinite,
+    ) ||
     !t.provenance
   )
     throw Error("Invalid camera-to-screen transform");

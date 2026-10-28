@@ -38,8 +38,8 @@ export function fitTranslation(
     reason: "",
     baseline,
     transform: baseline,
-    trainingBefore: 0,
-    trainingAfter: 0,
+    trainingBefore: null as number | null,
+    trainingAfter: null as number | null,
     validationBefore: null as number | null,
     validationAfter: null as number | null,
     conditionNumber: Infinity,
@@ -60,6 +60,9 @@ export function fitTranslation(
   if (
     observations.some(
       (o) =>
+        !Number.isFinite(o.quality) ||
+        o.quality < 0 ||
+        o.quality > 1 ||
         !Number.isFinite(norm(o.eye)) ||
         !Number.isFinite(norm(o.direction)) ||
         norm(o.direction) < 0.9 ||
@@ -67,6 +70,15 @@ export function fitTranslation(
     )
   )
     return fail("Invalid observations");
+  const trainingIds = new Set(train.map((o) => o.targetId));
+  if (
+    test.some(
+      (o) =>
+        trainingIds.has(o.targetId) ||
+        train.some((t) => norm(sub(o.target, t.target)) < 1),
+    )
+  )
+    return fail("Validation target overlaps training targets");
   let dx = 0,
     dy = 0,
     aa = 0,
@@ -116,6 +128,16 @@ export function fitTranslation(
     provenance:
       "fitted: bounded tx/ty from genuine external gaze observations; rotation and tz fixed",
   };
+  if (
+    [...train, ...test].some(
+      (o) =>
+        dot(
+          rotate(o.direction, candidate.rotation),
+          sub(o.target, transform(o.eye, candidate)),
+        ) <= 0,
+    )
+  )
+    return fail("Gaze ray points away from the target plane");
   const rms = (a: GazeObservation[], t: Transform) =>
     Math.sqrt(a.reduce((s, o) => s + residual(o, t) ** 2, 0) / a.length);
   result.trainingBefore = rms(train, baseline);

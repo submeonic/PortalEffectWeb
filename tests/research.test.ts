@@ -113,7 +113,19 @@ describe("experimental integrity", () => {
     const p = {
       version: 1,
       id: "x",
-      viewport: {},
+      viewport: {
+        screenWidth: 402,
+        screenHeight: 874,
+        width: 402,
+        height: 700,
+        dpr: 3,
+        scale: 1,
+        offsetLeft: 0,
+        offsetTop: 0,
+        originX: 0,
+        originY: 0,
+        orientation: "portrait-primary",
+      },
       cards: [],
       mmPerCss: 0.18,
       screenMode: "card",
@@ -144,5 +156,21 @@ describe("experimental integrity", () => {
     expect(() => paired(t, DEFAULT_CONDITION, DEFAULT_CONDITION)).toThrow(
       "camera",
     );
+  });
+});
+
+describe("additional validation gates", () => {
+  it("rejects rays pointing away from the screen", () => {
+    const o = syntheticGaze().map((o) => ({
+      ...o,
+      direction: { x: -o.direction.x, y: -o.direction.y, z: -o.direction.z },
+    }));
+    expect(fitTranslation(o, defaultTransform()).accepted).toBe(false);
+    expect(fitTranslation(o, defaultTransform()).reason).toContain("away");
+  });
+  it("rejects validation samples relabeled from a training target", () => {
+    const o = syntheticGaze();
+    o.filter((o) => o.heldOut).forEach((o) => (o.targetId = "0"));
+    expect(fitTranslation(o, defaultTransform()).reason).toContain("overlaps");
   });
 });

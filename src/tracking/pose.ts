@@ -80,7 +80,7 @@ export function estimate(
     ? p.intrinsics
     : assumedIntrinsics(o.width, o.height, c.focalScale);
   const iris =
-    i && compatible(i, o.width, o.height)
+    i && compatible(i, o.width, o.height, o.cameraSettings)
       ? irisDepth(o.landmarks, i, c.irisDiameter, c.distortion)
       : null;
   let eye = { ...face };

@@ -36,7 +36,7 @@ export class Portal {
     this.sceneName = name;
     for (const group of [this.objects, this.room]) {
       group.traverse((o) => {
-        if (o instanceof THREE.Mesh || o instanceof THREE.LineSegments) {
+        if (o instanceof THREE.Mesh || o instanceof THREE.Line) {
           o.geometry.dispose();
           const materials = Array.isArray(o.material)
             ? o.material
@@ -100,7 +100,7 @@ export class Portal {
     this.initialized = false;
   }
   render(eye: Vec3, bounds: Rect, condition: Condition) {
-    const r = this.element.getBoundingClientRect();
+    const r = this.renderer.domElement.getBoundingClientRect();
     if (r.width < 2 || r.height < 2) return;
     this.bounds = bounds;
     if (!this.initialized) {

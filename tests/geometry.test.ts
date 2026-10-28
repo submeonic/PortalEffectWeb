@@ -162,3 +162,8 @@ describe("intrinsics", () => {
     expect(() => validateIntrinsics({ fx: 500 })).toThrow();
   });
 });
+
+it("never promotes an assumed camera profile into a reference", () =>
+  expect(() => validateIntrinsics(assumedIntrinsics(640, 480))).toThrow(
+    "source must be reference",
+  ));

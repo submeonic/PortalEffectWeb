@@ -621,3 +621,15 @@ body.blind .intro p {
     scroll-behavior: auto !important;
   }
 }
+
+.capture-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 2px;
+  min-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: none;
+}

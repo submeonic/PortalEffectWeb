@@ -30,6 +30,14 @@ export function summarize(t: Trial) {
       .filter((s) => s.referenceDistanceMm !== null)
       .map((s) => s.raw!.z - s.referenceDistanceMm!);
   const jitter: number[] = [];
+  const filteredJitter: number[] = [];
+  let lossEvents = 0;
+  for (let i = 0; i < t.samples.length; i++) {
+    if (!t.samples[i].raw && (i === 0 || t.samples[i - 1].raw)) lossEvents++;
+    const a = t.samples[i - 1]?.filtered,
+      b = t.samples[i].filtered;
+    if (a && b) filteredJitter.push(norm(sub(a, b)));
+  }
   for (let i = 1; i < t.samples.length; i++) {
     const a = t.samples[i - 1].raw,
       b = t.samples[i].raw;
@@ -65,6 +73,16 @@ export function summarize(t: Trial) {
         ),
     ),
     rawStepMm: stats(jitter),
+    filteredStepMm: stats(filteredJitter),
+    stationarySpreadMm: {
+      x: stats(valid.map((s) => s.raw!.x)),
+      y: stats(valid.map((s) => s.raw!.y)),
+      z: stats(valid.map((s) => s.raw!.z)),
+    },
+    lossEvents,
+    processingMs: stats(
+      t.samples.map((s) => s.observation.processingMs ?? NaN),
+    ),
     note: "Step displacement includes intentional motion; only interpret as jitter during stationary trials. JS timings are not camera-to-photon latency.",
   };
 }
@@ -107,6 +125,8 @@ export function paired(t: Trial, a: Condition, b: Condition) {
       differences.push(Math.abs(y.z - ref) - Math.abs(x.z - ref));
   }
   return {
+    configurations: { a, b },
+    profileId: t.profile.id,
     a: summarize(aa),
     b: summarize(bb),
     matchedIndependentErrors: differences.length,

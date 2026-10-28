@@ -43,26 +43,51 @@ test("real MediaPipe inference on a known portrait fixture produces metric pose"
   );
 });
 
-test('camera pipeline uses worker inference and records replayable fixture observations',async({browser})=>{
+test("camera pipeline uses worker inference and records replayable fixture observations", async ({
+  browser,
+}) => {
   test.setTimeout(60000);
-  const context=await browser.newContext({viewport:{width:402,height:874},screen:{width:402,height:874},isMobile:true,baseURL:'http://127.0.0.1:5173'});
-  const page=await context.newPage();
-  await page.addInitScript(()=>{
-    navigator.mediaDevices.getUserMedia=async()=>{
-      const image=new Image();image.src='/tests/fixtures/portrait.jpg';await image.decode();
-      const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
-      const draw=()=>{canvas.getContext('2d')!.drawImage(image,0,0);requestAnimationFrame(draw);};draw();
+  const context = await browser.newContext({
+    viewport: { width: 402, height: 874 },
+    screen: { width: 402, height: 874 },
+    isMobile: true,
+    baseURL: "http://127.0.0.1:5173",
+  });
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    navigator.mediaDevices.getUserMedia = async () => {
+      const image = new Image();
+      image.src = "/tests/fixtures/portrait.jpg";
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const draw = () => {
+        canvas.getContext("2d")!.drawImage(image, 0, 0);
+        requestAnimationFrame(draw);
+      };
+      draw();
       return canvas.captureStream(24);
     };
   });
-  await page.goto('/');await page.locator('#start-camera').click();
-  await expect(page.locator('#tracking-state')).toContainText('Face detected',{timeout:45000});
-  await page.getByRole('button',{name:'Diagnostics',exact:true}).click();
-  await expect(page.locator('#delegate')).toContainText('worker CPU');
-  await page.getByRole('button',{name:'Experiments',exact:true}).click();
-  await page.locator('#start-trial').click();await page.waitForTimeout(900);await page.locator('#stop-trial').click();
-  await expect(page.locator('#trial-list')).toContainText('camera');
-  await page.locator('#run-paired').click();await expect(page.locator('#paired-results')).toContainText('matchedIndependentErrors');
-  await page.getByRole('button',{name:'Portal',exact:true}).click();await page.locator('#stop-camera').click();
-  await expect(page.locator('#tracking-state')).toContainText('Camera is off');await context.close();
+  await page.goto("/");
+  await page.locator("#start-camera").click();
+  await expect(page.locator("#tracking-state")).toContainText("Face detected", {
+    timeout: 45000,
+  });
+  await page.getByRole("button", { name: "Diagnostics", exact: true }).click();
+  await expect(page.locator("#delegate")).toContainText("worker CPU");
+  await page.getByRole("button", { name: "Experiments", exact: true }).click();
+  await page.locator("#start-trial").click();
+  await page.waitForTimeout(900);
+  await page.locator("#stop-trial").click();
+  await expect(page.locator("#trial-list")).toContainText("camera");
+  await page.locator("#run-paired").click();
+  await expect(page.locator("#paired-results")).toContainText(
+    "matchedIndependentErrors",
+  );
+  await page.getByRole("button", { name: "Portal", exact: true }).click();
+  await page.locator("#stop-camera").click();
+  await expect(page.locator("#tracking-state")).toContainText("Camera is off");
+  await context.close();
 });

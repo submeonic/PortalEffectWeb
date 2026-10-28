@@ -6,3 +6,7 @@ public/vendor/
 public/models/
 .local-git/
 *.pem
+.cert/
+__pycache__/
+evaluation.json
+.venv/

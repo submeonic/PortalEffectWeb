@@ -1,4 +1,5 @@
 import "./style.css";
+import { validateCondition, validateTrials } from "./storage/validation";
 import { template } from "./ui/template";
 import { Portal } from "./rendering/portal";
 import { Capture } from "./camera/capture";
@@ -58,6 +59,7 @@ let renderIntervals: number[] = [],
   inferences: number[] = [],
   activePage = "demo",
   invalidated = false,
+  placementInvalid = false,
   cardStarted = 0,
   initialWidth = 290,
   trialStarted = 0;
@@ -65,8 +67,17 @@ let gazeFit: ReturnType<typeof fitTranslation> | null = null,
   blindOrder: Condition["rendering"][] = [],
   blindIndex = 0,
   blindOriginal: Condition | null = null;
-const video = $<HTMLVideoElement>("camera-preview"),
-  portals: Portal[] = [];
+const preview = $<HTMLVideoElement>("camera-preview");
+// Keep the capture element outside display:none research panels. The visible
+// mirrored preview is a separate consumer of the same stream.
+const video = document.createElement("video");
+video.autoplay = true;
+video.muted = true;
+video.playsInline = true;
+video.className = "capture-video";
+video.setAttribute("aria-hidden", "true");
+document.body.append(video);
+const portals: Portal[] = [];
 try {
   portals.push(new Portal($("portal-main")), new Portal($("portal-second")));
 } catch (e) {
@@ -100,6 +111,12 @@ function save() {
   }
 }
 function go(page: string) {
+  if (page === "diagnostics" && capture.stream) {
+    preview.srcObject = capture.stream;
+    void preview
+      .play()
+      .catch((e) => diagnostics.event("preview-error", String(e)));
+  } else preview.pause();
   activePage = page;
   document
     .querySelectorAll(".page")
@@ -197,6 +214,9 @@ for (const axis of ["x", "y", "z"])
   };
 function stopCamera() {
   capture.stop();
+  preview.pause();
+  preview.srcObject = null;
+  video.srcObject = null;
   tracker.stop();
   live = false;
   invalidated = false;
@@ -247,6 +267,9 @@ $("start-camera").onclick = async () => {
 };
 $("stop-camera").onclick = stopCamera;
 function observe(o: Observation) {
+  o.cameraSettings = capture.stream
+    ?.getVideoTracks()[0]
+    .getSettings() as Record<string, unknown>;
   inferences.push(o.inferenceMs);
   if (inferences.length > 600) inferences.shift();
   const intrinsicInvalid =
@@ -382,17 +405,24 @@ function animate(time: number) {
 requestAnimationFrame(animate);
 function geometryChange() {
   const v = view();
+  if (
+    live &&
+    condition.display === "card" &&
+    (v.height !== profile.viewport.height || v.width !== profile.viewport.width)
+  )
+    placementInvalid = true;
   invalidated =
     !displayCompatible(profile.viewport, v) ||
     v.orientation.startsWith("landscape");
   if (condition.display !== "card")
     invalidated = v.scale !== 1 || v.orientation.startsWith("landscape");
+  if (condition.display === "card" && placementInvalid) invalidated = true;
   if (!live) invalidated = false;
   diagnostics.event("viewport-change", v);
   if (current) finishTrial();
   if (invalidated)
     notify(
-      "Calibrated rendering suspended: return to portrait and 100% zoom, or recalibrate after display changes.",
+      "Calibrated rendering suspended: return to portrait and 100% zoom, or confirm content placement in Calibration after display changes.",
     );
   else if (live) {
     notify(
@@ -534,6 +564,7 @@ $("save-card").onclick = () => {
   };
   condition.display = "card";
   invalidated = false;
+  placementInvalid = false;
   save();
   changed();
   $<HTMLDialogElement>("card-dialog").close();
@@ -560,6 +591,8 @@ $("save-placement").onclick = () => {
   };
   profile.transform.provenance =
     "user-entered placement; independent accuracy not established";
+  invalidated = false;
+  placementInvalid = false;
   save();
   changed();
   notify("Placement saved. Record the measurement method in your trial notes.");
@@ -672,7 +705,7 @@ function startTrial(label?: string) {
       screenMode: condition.display,
       mmPerCss: scale(),
     }),
-    diagnostics: snapshot(),
+    diagnostics: structuredClone(snapshot()),
     samples: [],
     renderIntervals: [],
     referenceProvenance:
@@ -797,7 +830,7 @@ function session() {
     condition,
     trials,
     summary: trials.map(summarize),
-    diagnostics: snapshot(),
+    diagnostics: structuredClone(snapshot()),
   };
 }
 $("export-json").onclick = () => {
@@ -809,20 +842,9 @@ $("export-csv").onclick = () => {
   download("portal-observations.csv", csv(trials), "text/csv");
 };
 importFile("import-session", (data) => {
-  if (
-    data.version !== 1 ||
-    !Array.isArray(data.trials) ||
-    data.trials.some(
-      (t: Trial) =>
-        !t.condition ||
-        !t.profile ||
-        !Array.isArray(t.samples) ||
-        !Array.isArray(t.renderIntervals),
-    )
-  )
-    throw Error("Invalid session format");
-  for (const t of data.trials) validateProfile(t.profile);
-  trials.push(...data.trials);
+  if (data.version !== 1) throw Error("Unsupported session version");
+  const imported = validateTrials(data.trials);
+  trials.push(...imported);
   renderTrials();
   notify("Session imported.");
 });
@@ -836,7 +858,11 @@ $("run-paired").onclick = () => {
     $("paired-results").textContent = JSON.stringify(
       paired(
         t,
-        { ...t.condition, depth: "face" },
+        {
+          ...t.condition,
+          depth: $<HTMLSelectElement>("paired-baseline")
+            .value as Condition["depth"],
+        },
         { ...t.condition, ...condition },
       ),
       null,
@@ -853,7 +879,12 @@ $("save-condition").onclick = () => {
 $("load-condition").onclick = () => {
   const stored = localStorage.getItem("portal.condition.v1");
   if (stored) {
-    condition = JSON.parse(stored);
+    try {
+      condition = validateCondition(JSON.parse(stored));
+    } catch (e) {
+      notify(String(e));
+      return;
+    }
     changed();
     notify("Condition restored.");
   }
@@ -900,8 +931,7 @@ $("capture-frame").onclick = () => {
   });
 };
 window.addEventListener("pagehide", () => {
-  capture.stop();
-  tracker.stop();
+  stopCamera();
 });
 sync();
 diagnostics.event("app-ready", { profile: profile.id });

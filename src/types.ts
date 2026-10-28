@@ -87,6 +87,7 @@ export type Observation = {
   height: number;
   inferenceMs: number;
   processingMs?: number;
+  cameraSettings?: Record<string, unknown>;
   intervalMs: number;
   detected: boolean;
   quality: number | null;

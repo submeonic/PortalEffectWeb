@@ -1,6 +1,412 @@
 {
   "provenance": "simulated; no hardware measurements",
   "seed": 123,
+  "deviceSensitivity": {
+    "cameraIntrinsics": {
+      "fx": 600,
+      "fy": 600,
+      "cx": 320,
+      "cy": 240,
+      "width": 640,
+      "height": 480
+    },
+    "cameraToScreen": {
+      "rotation": [
+        -1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "translation": {
+        "x": 0,
+        "y": 64.4,
+        "z": 0
+      },
+      "provenance": "assumed: camera centered, 8 mm below display top, zero depth offset"
+    },
+    "eyeCamera": {
+      "x": -25,
+      "y": 45,
+      "z": 400
+    },
+    "eyeScreen": {
+      "x": 25,
+      "y": 19.400000000000006,
+      "z": 400
+    },
+    "object": {
+      "x": 0,
+      "y": 0,
+      "z": -60
+    },
+    "rows": [
+      {
+        "factor": "screen scale",
+        "perturbation": -20,
+        "unit": "percent",
+        "eyeErrorMm": null,
+        "projectionErrorMm": 1.031878460333295,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "focal length / iris depth",
+        "perturbation": -20,
+        "unit": "percent",
+        "eyeErrorMm": 80,
+        "projectionErrorMm": 0.8689502823859341,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "principal point X",
+        "perturbation": -20,
+        "unit": "pixels",
+        "eyeErrorMm": 13.333333333333334,
+        "projectionErrorMm": 1.7391304347826075,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "face metric scale",
+        "perturbation": -20,
+        "unit": "percent",
+        "eyeErrorMm": 80.65977932030313,
+        "projectionErrorMm": 1.9564875343270471,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye depth",
+        "perturbation": -20,
+        "unit": "percent",
+        "eyeErrorMm": 80,
+        "projectionErrorMm": 0.8689502823859341,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera translation X",
+        "perturbation": -10,
+        "unit": "mm",
+        "eyeErrorMm": 10,
+        "projectionErrorMm": 1.3043478260869552,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera yaw",
+        "perturbation": -2.864788975654116,
+        "unit": "degrees",
+        "eyeErrorMm": 20.036937094204127,
+        "projectionErrorMm": 2.612743458198763,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye landmark X",
+        "perturbation": -2,
+        "unit": "pixels",
+        "eyeErrorMm": 1.3333333333333321,
+        "projectionErrorMm": 0.17391304347826164,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "tracking position noise X",
+        "perturbation": -2,
+        "unit": "mm",
+        "eyeErrorMm": 2,
+        "projectionErrorMm": 0.2608695652173907,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "screen scale",
+        "perturbation": -10,
+        "unit": "percent",
+        "eyeErrorMm": null,
+        "projectionErrorMm": 0.45861264903701976,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "focal length / iris depth",
+        "perturbation": -10,
+        "unit": "percent",
+        "eyeErrorMm": 40,
+        "projectionErrorMm": 0.39309655631744667,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "principal point X",
+        "perturbation": -10,
+        "unit": "pixels",
+        "eyeErrorMm": 6.666666666666668,
+        "projectionErrorMm": 0.8695652173913029,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "face metric scale",
+        "perturbation": -10,
+        "unit": "percent",
+        "eyeErrorMm": 40.329889660151565,
+        "projectionErrorMm": 0.8850776941003291,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye depth",
+        "perturbation": -10,
+        "unit": "percent",
+        "eyeErrorMm": 40,
+        "projectionErrorMm": 0.39309655631744667,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera translation X",
+        "perturbation": -5,
+        "unit": "mm",
+        "eyeErrorMm": 5,
+        "projectionErrorMm": 0.6521739130434767,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera yaw",
+        "perturbation": -1.432394487827058,
+        "unit": "degrees",
+        "eyeErrorMm": 10.019251290917111,
+        "projectionErrorMm": 1.3073569533464382,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye landmark X",
+        "perturbation": -1,
+        "unit": "pixels",
+        "eyeErrorMm": 0.6666666666666679,
+        "projectionErrorMm": 0.0869565217391326,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "tracking position noise X",
+        "perturbation": -1,
+        "unit": "mm",
+        "eyeErrorMm": 1,
+        "projectionErrorMm": 0.13043478260869534,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "screen scale",
+        "perturbation": 0,
+        "unit": "percent",
+        "eyeErrorMm": null,
+        "projectionErrorMm": 0,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "focal length / iris depth",
+        "perturbation": 0,
+        "unit": "percent",
+        "eyeErrorMm": 0,
+        "projectionErrorMm": 0,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "principal point X",
+        "perturbation": 0,
+        "unit": "pixels",
+        "eyeErrorMm": 0,
+        "projectionErrorMm": 0,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "face metric scale",
+        "perturbation": 0,
+        "unit": "percent",
+        "eyeErrorMm": 0,
+        "projectionErrorMm": 0,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye depth",
+        "perturbation": 0,
+        "unit": "percent",
+        "eyeErrorMm": 0,
+        "projectionErrorMm": 0,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera translation X",
+        "perturbation": 0,
+        "unit": "mm",
+        "eyeErrorMm": 0,
+        "projectionErrorMm": 0,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera yaw",
+        "perturbation": 0,
+        "unit": "degrees",
+        "eyeErrorMm": 0,
+        "projectionErrorMm": 0,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye landmark X",
+        "perturbation": 0,
+        "unit": "pixels",
+        "eyeErrorMm": 0,
+        "projectionErrorMm": 0,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "tracking position noise X",
+        "perturbation": 0,
+        "unit": "mm",
+        "eyeErrorMm": 0,
+        "projectionErrorMm": 0,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "screen scale",
+        "perturbation": 10,
+        "unit": "percent",
+        "eyeErrorMm": null,
+        "projectionErrorMm": 0.37522853103028936,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "focal length / iris depth",
+        "perturbation": 10,
+        "unit": "percent",
+        "eyeErrorMm": 40.00000000000006,
+        "projectionErrorMm": 0.33020110730665536,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "principal point X",
+        "perturbation": 10,
+        "unit": "pixels",
+        "eyeErrorMm": 6.666666666666668,
+        "projectionErrorMm": 0.8695652173913047,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "face metric scale",
+        "perturbation": 10,
+        "unit": "percent",
+        "eyeErrorMm": 40.32988966015162,
+        "projectionErrorMm": 0.7434652630442794,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye depth",
+        "perturbation": 10,
+        "unit": "percent",
+        "eyeErrorMm": 40.00000000000006,
+        "projectionErrorMm": 0.33020110730665536,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera translation X",
+        "perturbation": 5,
+        "unit": "mm",
+        "eyeErrorMm": 5,
+        "projectionErrorMm": 0.6521739130434803,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera yaw",
+        "perturbation": 1.432394487827058,
+        "unit": "degrees",
+        "eyeErrorMm": 10.019251290917113,
+        "projectionErrorMm": 1.3106523516432056,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye landmark X",
+        "perturbation": 1,
+        "unit": "pixels",
+        "eyeErrorMm": 0.6666666666666679,
+        "projectionErrorMm": 0.08695652173912904,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "tracking position noise X",
+        "perturbation": 1,
+        "unit": "mm",
+        "eyeErrorMm": 1,
+        "projectionErrorMm": 0.13043478260869534,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "screen scale",
+        "perturbation": 20,
+        "unit": "percent",
+        "eyeErrorMm": null,
+        "projectionErrorMm": 0.6879189735555297,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "focal length / iris depth",
+        "perturbation": 20,
+        "unit": "percent",
+        "eyeErrorMm": 80,
+        "projectionErrorMm": 0.611483532049358,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "principal point X",
+        "perturbation": 20,
+        "unit": "pixels",
+        "eyeErrorMm": 13.333333333333336,
+        "projectionErrorMm": 1.7391304347826093,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "face metric scale",
+        "perturbation": 20,
+        "unit": "percent",
+        "eyeErrorMm": 80.65977932030313,
+        "projectionErrorMm": 1.3767875241560708,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye depth",
+        "perturbation": 20,
+        "unit": "percent",
+        "eyeErrorMm": 80,
+        "projectionErrorMm": 0.611483532049358,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera translation X",
+        "perturbation": 10,
+        "unit": "mm",
+        "eyeErrorMm": 10,
+        "projectionErrorMm": 1.304347826086957,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "camera yaw",
+        "perturbation": 2.864788975654116,
+        "unit": "degrees",
+        "eyeErrorMm": 20.036937094204127,
+        "projectionErrorMm": 2.6259387630627167,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "eye landmark X",
+        "perturbation": 2,
+        "unit": "pixels",
+        "eyeErrorMm": 1.3333333333333321,
+        "projectionErrorMm": 0.1739130434782581,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      },
+      {
+        "factor": "tracking position noise X",
+        "perturbation": 2,
+        "unit": "mm",
+        "eyeErrorMm": 2,
+        "projectionErrorMm": 0.26086956521739424,
+        "provenance": "simulated virtual device; all other parameters fixed"
+      }
+    ]
+  },
   "units": "mm unless named otherwise",
   "sweep": [
     {
@@ -175,8 +581,8 @@
       },
       "provenance": "assumed: camera centered, 8 mm below display top, zero depth offset"
     },
-    "trainingBefore": 0,
-    "trainingAfter": 0,
+    "trainingBefore": null,
+    "trainingAfter": null,
     "validationBefore": null,
     "validationAfter": null,
     "conditionNumber": 1.008108717270853,

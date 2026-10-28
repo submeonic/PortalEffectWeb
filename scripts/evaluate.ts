@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
+import { validateTrials } from "../src/storage/validation";
 import { paired, summarize } from "../src/experiments/metrics";
 import type { Trial, Condition } from "../src/types";
 const input = process.argv[2];
@@ -7,7 +8,7 @@ if (!input)
 const session = JSON.parse(readFileSync(input, "utf8"));
 if (session.version !== 1 || !Array.isArray(session.trials))
   throw Error("Expected version 1 session");
-const report = session.trials.map((trial: Trial) => ({
+const report = validateTrials(session.trials).map((trial: Trial) => ({
   summary: summarize(trial),
   comparisons: trial.samples.every((s) => s.observation.source === "camera")
     ? (
