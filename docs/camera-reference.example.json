@@ -1,0 +1,13 @@
+{
+  "fx": 576,
+  "fy": 576,
+  "cx": 320,
+  "cy": 240,
+  "width": 640,
+  "height": 480,
+  "distortion": [0, 0, 0, 0, 0],
+  "orientation": "landscape",
+  "source": "assumed",
+  "provenance": "SCHEMA EXAMPLE ONLY — replace with independent calibration; not an iPhone reference",
+  "uncertainty": "Unknown. These example values are not measured."
+}

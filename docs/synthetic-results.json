@@ -1,0 +1,243 @@
+{
+  "provenance": "simulated; no hardware measurements",
+  "seed": 123,
+  "units": "mm unless named otherwise",
+  "sweep": [
+    {
+      "perturbation": -0.2,
+      "depthProjectionErrorMm": 0.686498855835243,
+      "lateralProjectionErrorMm": 1.3043478260869552,
+      "displayScaleErrorPercent": -20,
+      "displayScaleProjectionErrorMm": 0.6521739130434782,
+      "irisDepthErrorFromFocalPercent": -20,
+      "irisDepthErrorFromDiameterPercent": -20,
+      "principalPointShiftPx": -20,
+      "principalPointEyeErrorMm": 13.333333333333334
+    },
+    {
+      "perturbation": -0.1,
+      "depthProjectionErrorMm": 0.31055900621118226,
+      "lateralProjectionErrorMm": 0.6521739130434767,
+      "displayScaleErrorPercent": -10,
+      "displayScaleProjectionErrorMm": 0.3260869565217391,
+      "irisDepthErrorFromFocalPercent": -10,
+      "irisDepthErrorFromDiameterPercent": -10,
+      "principalPointShiftPx": -10,
+      "principalPointEyeErrorMm": 6.666666666666667
+    },
+    {
+      "perturbation": -0.05,
+      "depthProjectionErrorMm": 0.14822134387351937,
+      "lateralProjectionErrorMm": 0.32608695652173836,
+      "displayScaleErrorPercent": -5,
+      "displayScaleProjectionErrorMm": 0.16304347826086954,
+      "irisDepthErrorFromFocalPercent": -5,
+      "irisDepthErrorFromDiameterPercent": -5,
+      "principalPointShiftPx": -5,
+      "principalPointEyeErrorMm": 3.3333333333333335
+    },
+    {
+      "perturbation": 0,
+      "depthProjectionErrorMm": 0,
+      "lateralProjectionErrorMm": 0,
+      "displayScaleErrorPercent": 0,
+      "displayScaleProjectionErrorMm": 0,
+      "irisDepthErrorFromFocalPercent": 0,
+      "irisDepthErrorFromDiameterPercent": 0,
+      "principalPointShiftPx": 0,
+      "principalPointEyeErrorMm": 0
+    },
+    {
+      "perturbation": 0.05,
+      "depthProjectionErrorMm": 0.1358695652173907,
+      "lateralProjectionErrorMm": 0.3260869565217419,
+      "displayScaleErrorPercent": 5,
+      "displayScaleProjectionErrorMm": 0.16304347826086954,
+      "irisDepthErrorFromFocalPercent": 5,
+      "irisDepthErrorFromDiameterPercent": 5,
+      "principalPointShiftPx": 5,
+      "principalPointEyeErrorMm": 3.3333333333333335
+    },
+    {
+      "perturbation": 0.1,
+      "depthProjectionErrorMm": 0.2608695652173907,
+      "lateralProjectionErrorMm": 0.6521739130434803,
+      "displayScaleErrorPercent": 10,
+      "displayScaleProjectionErrorMm": 0.3260869565217391,
+      "irisDepthErrorFromFocalPercent": 10,
+      "irisDepthErrorFromDiameterPercent": 10,
+      "principalPointShiftPx": 10,
+      "principalPointEyeErrorMm": 6.666666666666667
+    },
+    {
+      "perturbation": 0.2,
+      "depthProjectionErrorMm": 0.4830917874396121,
+      "lateralProjectionErrorMm": 1.304347826086957,
+      "displayScaleErrorPercent": 20,
+      "displayScaleProjectionErrorMm": 0.6521739130434782,
+      "irisDepthErrorFromFocalPercent": 20,
+      "irisDepthErrorFromDiameterPercent": 20,
+      "principalPointShiftPx": 20,
+      "principalPointEyeErrorMm": 13.333333333333334
+    }
+  ],
+  "idealFit": {
+    "accepted": true,
+    "reason": "Independent residual improved; repeat at a new head position before treating as accurate",
+    "baseline": {
+      "rotation": [
+        -1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "translation": {
+        "x": 0,
+        "y": 64.4,
+        "z": 0
+      },
+      "provenance": "assumed: camera centered, 8 mm below display top, zero depth offset"
+    },
+    "transform": {
+      "rotation": [
+        -1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "translation": {
+        "x": 2.9999999999999365,
+        "y": 60.40000000000009,
+        "z": 0
+      },
+      "provenance": "fitted: bounded tx/ty from genuine external gaze observations; rotation and tz fixed"
+    },
+    "trainingBefore": 4.964286826795564,
+    "trainingAfter": 1.3235319499029865e-13,
+    "validationBefore": 4.9944441327417355,
+    "validationAfter": 1.3478637928079657e-13,
+    "conditionNumber": 1.010173781350938,
+    "delta": {
+      "x": 2.9999999999999365,
+      "y": -3.9999999999999116
+    },
+    "uncertaintyMm": 1.9278852818278436e-14,
+    "priorSigmaMm": 1000000
+  },
+  "biasedFit": {
+    "accepted": false,
+    "reason": "Fit exceeds physical parameter bounds",
+    "baseline": {
+      "rotation": [
+        -1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "translation": {
+        "x": 0,
+        "y": 64.4,
+        "z": 0
+      },
+      "provenance": "assumed: camera centered, 8 mm below display top, zero depth offset"
+    },
+    "transform": {
+      "rotation": [
+        -1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "translation": {
+        "x": 0,
+        "y": 64.4,
+        "z": 0
+      },
+      "provenance": "assumed: camera centered, 8 mm below display top, zero depth offset"
+    },
+    "trainingBefore": 0,
+    "trainingAfter": 0,
+    "validationBefore": null,
+    "validationAfter": null,
+    "conditionNumber": 1.008108717270853,
+    "delta": {
+      "x": 23.60592180030062,
+      "y": -3.971658904106126
+    },
+    "uncertaintyMm": null,
+    "priorSigmaMm": 8
+  },
+  "noisyFit": {
+    "accepted": true,
+    "reason": "Independent residual improved; repeat at a new head position before treating as accurate",
+    "baseline": {
+      "rotation": [
+        -1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "translation": {
+        "x": 0,
+        "y": 64.4,
+        "z": 0
+      },
+      "provenance": "assumed: camera centered, 8 mm below display top, zero depth offset"
+    },
+    "transform": {
+      "rotation": [
+        -1,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "translation": {
+        "x": 2.839908406680668,
+        "y": 60.47263770189642,
+        "z": 0
+      },
+      "provenance": "fitted: bounded tx/ty from genuine external gaze observations; rotation and tz fixed"
+    },
+    "trainingBefore": 5.083985024045066,
+    "trainingAfter": 1.6373747872725313,
+    "validationBefore": 5.354071764209185,
+    "validationAfter": 1.687961659886709,
+    "conditionNumber": 1.010346230397112,
+    "delta": {
+      "x": 2.839908406680668,
+      "y": -3.927362298103588
+    },
+    "uncertaintyMm": 0.2385123009307405,
+    "priorSigmaMm": 8
+  }
+}
