@@ -126,7 +126,7 @@ export function fitTranslation(
     ...baseline,
     translation: add(baseline.translation, { x: dx, y: dy, z: 0 }),
     provenance:
-      "fitted: bounded tx/ty from genuine external gaze observations; rotation and tz fixed",
+      "fitted: bounded tx/ty from camera-relative gaze observations; rotation and tz fixed",
   };
   if (
     [...train, ...test].some(
@@ -147,9 +147,12 @@ export function fitTranslation(
   result.uncertaintyMm = result.trainingAfter / Math.sqrt(Math.min(aa, bb));
   if (
     result.validationAfter >= result.validationBefore * 0.95 ||
-    result.validationAfter > 10
+    result.validationAfter > 10 ||
+    result.validationBefore - result.validationAfter < 1
   )
-    return fail("Withheld target does not improve by 5% or exceeds 10 mm");
+    return fail(
+      "Withheld target needs 5% and 1 mm improvement, with residual at most 10 mm",
+    );
   return {
     ...result,
     accepted: true,

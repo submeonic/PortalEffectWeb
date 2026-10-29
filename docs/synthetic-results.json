@@ -526,7 +526,7 @@
         "y": 60.40000000000009,
         "z": 0
       },
-      "provenance": "fitted: bounded tx/ty from genuine external gaze observations; rotation and tz fixed"
+      "provenance": "fitted: bounded tx/ty from camera-relative gaze observations; rotation and tz fixed"
     },
     "trainingBefore": 4.964286826795564,
     "trainingAfter": 1.3235319499029865e-13,
@@ -632,7 +632,7 @@
         "y": 60.47263770189642,
         "z": 0
       },
-      "provenance": "fitted: bounded tx/ty from genuine external gaze observations; rotation and tz fixed"
+      "provenance": "fitted: bounded tx/ty from camera-relative gaze observations; rotation and tz fixed"
     },
     "trainingBefore": 5.083985024045066,
     "trainingAfter": 1.6373747872725313,

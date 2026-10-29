@@ -65,6 +65,7 @@ export type Profile = {
   intrinsics?: Intrinsics;
   cards: CardTrial[];
   gaze?: unknown;
+  placement?: { originX: number; originY: number; provenance: string };
 };
 export type Condition = {
   display: "nominal" | "generic" | "card";
@@ -107,6 +108,9 @@ export type Sample = {
   observation: Observation;
   raw: Vec3 | null;
   filtered: Vec3 | null;
+  windowEyes?: (Vec3 | null)[];
+  windowFilteredEyes?: (Vec3 | null)[];
+  viewport?: Viewport;
   faceDepth: number | null;
   irisDepth: number | null;
   referenceDistanceMm: number | null;
@@ -119,7 +123,13 @@ export type Trial = {
   start: string;
   end?: string;
   condition: Condition;
+  windowModels?: {
+    device: "reference" | "unknown";
+    card: boolean;
+    gaze: boolean;
+  }[];
   profile: Profile;
+  resolvedModels?: import("./geometry/coordinate-model").ResolvedModel[];
   diagnostics: unknown;
   samples: Sample[];
   renderIntervals: number[];

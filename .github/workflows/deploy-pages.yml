@@ -25,7 +25,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Prepare MediaPipe assets
+      - name: Prepare local tracking and gaze assets
         run: npm run assets
       - name: Build site
         run: npm run build

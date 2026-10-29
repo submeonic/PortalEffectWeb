@@ -1,6 +1,6 @@
 # Results and recommendation template
 
-**Current evidence:** synthetic numerical checks and desktop fixture/UI execution only. No real iPhone trials, independent metric accuracy measurements, human perceptual scores or gaze-model benchmark results exist yet. Do not replace blank fields with zeros.
+**Current evidence:** synthetic numerical checks and desktop fixture/UI execution only. The user reports that the original MediaPipe portal produced the intended effect on an iPhone 16 Pro. No quantitative iPhone trials, independent metric accuracy measurements, human perceptual scores or device gaze-model benchmarks exist yet; desktop ONNX fixture execution is now verified. Do not replace blank fields with zeros.
 
 ## Session provenance
 
@@ -19,14 +19,18 @@
 
 | Condition | Valid frames % | Depth absolute error median / p95 (mm) | Stationary Z SD (mm) | Raw / filtered displacement | Inference median / p95 (ms) | Render median / p95 (ms) | Calibration time |
 |---|---|---|---|---|---|---|---|
-| Nominal + face matrix + One Euro | — | — | — | — | — | — | — |
-| Card + face matrix + One Euro | — | — | — | — | — | — | — |
+| iPhone 16 Pro reference + face matrix + One Euro | — | — | — | — | — | — | — |
+| Unknown Device baseline + face matrix + One Euro | — | — | — | — | — | — | — |
+| Unknown Device + both calibrations | — | — | — | — | — | — | — |
+| Unknown Device + card + face matrix + One Euro | — | — | — | — | — | — | — |
 | Assumed iris + One Euro | — | — | — | — | — | — | — |
 | Reference iris + One Euro | — | — | — | — | — | — | — |
 | Fixed 50/50 fusion | — | — | — | — | — | — | — |
-| Accepted external gaze tx/ty | — | — | — | — | — | — | — |
+| Unknown Device + gaze (without card) | — | — | — | — | — | — | — |
 
 For every comparison report matched-frame count, rejected-frame count, independent trial count, reference uncertainty, mean/median paired difference, interval method and effect size. Frame bootstrap is exploratory because adjacent samples are correlated. Report failures and missing measurements as unavailable.
+
+Add rows for Reference + optional calibrations if tested. Report unavailable/rejected gaze conditions explicitly instead of treating them as baseline successes. Window agreement in exports is computed from identical observations and is not independent physical error.
 
 ## Screen scale
 
@@ -46,7 +50,7 @@ Pre-register a practically meaningful improvement before collecting data (exampl
 | Measured viewport placement | Unknown | Unknown | Negligible runtime arithmetic | Retest |
 | Camera reference intrinsics | Unknown | Advanced capture effort | Small ray-correction overhead | Retest |
 | Iris depth | Unknown | No additional user action | Small numerical overhead | Retest |
-| Gaze refinement | Unknown | Model/fixation cost unmeasured | Calibration-only model cost | Deferred |
+| Gaze refinement | Unknown | Measure exported live runs | Calibration-only model cost | Live experiment implemented; evaluate |
 
 Starting condition for the first study: nominal profile + face matrix + One Euro. This is a low-effort baseline, **not a proven winner**. Prefer the simplest condition whose independently measured benefit is reproducible, stable across head positions and meaningful relative to reference uncertainty. If improvements are within measurement noise, preserve the simpler baseline.
 

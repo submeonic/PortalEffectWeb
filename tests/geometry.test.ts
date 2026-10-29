@@ -11,6 +11,7 @@ import {
   frustum,
   screenIntersection,
   displayCompatible,
+  cardPlacementCompatible,
 } from "../src/geometry/math";
 import { matrixPoint } from "../src/tracking/pose";
 import {
@@ -21,6 +22,16 @@ import {
   validateIntrinsics,
 } from "../src/geometry/intrinsics";
 import type { Viewport } from "../src/types";
+import {
+  resolveModel,
+  modelEye,
+  modelBounds,
+  UNKNOWN_SCALE,
+  baseModel,
+  gazeContext,
+  savedGazeFit,
+} from "../src/geometry/coordinate-model";
+import { newProfile } from "../src/storage/profiles";
 const v: Viewport = {
   screenWidth: 402,
   screenHeight: 874,
@@ -35,6 +46,81 @@ const v: Viewport = {
   originY: 70,
 };
 describe("physical geometry", () => {
+  it("keeps unknown-device priors independent of reference placement", () => {
+    const p = newProfile(v);
+    p.viewport.originY = 65;
+    p.transform.translation = { x: 7, y: 50, z: 3 };
+    p.transform.provenance = "user-entered placement";
+    const known = resolveModel(
+      { device: "reference", card: false, gaze: false },
+      p,
+      v,
+    );
+    const unknown = resolveModel(
+      { device: "unknown", card: false, gaze: false },
+      p,
+      v,
+    );
+    expect(known.cameraToScreen.translation).toEqual({ x: 7, y: 50, z: 3 });
+    expect(unknown.mmPerCss).toBe(UNKNOWN_SCALE);
+    expect(unknown.cameraToScreen.translation).toEqual({
+      x: 0,
+      y: (874 * UNKNOWN_SCALE) / 2,
+      z: 0,
+    });
+    expect(unknown.viewport.originY).toBe(0);
+  });
+  it("applies saved scale and gaze correction to the physical model", () => {
+    const p = newProfile(v);
+    p.cards.push({
+      id: "card",
+      timestamp: "now",
+      widthCss: 300,
+      initialWidthCss: 300,
+      mmPerCss: 0.2,
+      durationMs: 1000,
+      viewport: v,
+    });
+    p.mmPerCss = 0.2;
+    p.gaze = {
+      version: 2,
+      fits: {
+        "unknown:card": {
+          context: gazeContext(
+            baseModel({ device: "unknown", card: true, gaze: false }, p, v),
+          ),
+          fit: {
+            accepted: true,
+            delta: { x: 3, y: -4 },
+            validationBefore: 8,
+            validationAfter: 2,
+          },
+        },
+      },
+    };
+    const baseline = resolveModel(
+      { device: "unknown", card: false, gaze: false },
+      p,
+      v,
+    );
+    const refined = resolveModel(
+      { device: "unknown", card: true, gaze: true },
+      p,
+      v,
+    );
+    expect(refined.mmPerCss).toBe(0.2);
+    expect(
+      modelEye({ x: 0, y: 0, z: 400 }, refined).x -
+        modelEye({ x: 0, y: 0, z: 400 }, baseline).x,
+    ).toBe(3);
+    const r = { left: 101, right: 301, top: 267, bottom: 467 };
+    expect(
+      modelBounds(r, refined).right - modelBounds(r, refined).left,
+    ).toBeCloseTo(40);
+    expect(refined.cameraToScreen.translation.y).toBeCloseTo(
+      (874 * 0.2) / 2 - 4,
+    );
+  });
   it("uses rotated ID-1 dimensions without nominal correction", () => {
     expect(CARD).toEqual({ width: 53.98, height: 85.6 });
     expect(cardScale(300)).toBeCloseTo(0.179933333333, 10);
@@ -83,6 +169,11 @@ describe("physical geometry", () => {
     expect(displayCompatible(v, { ...v, dpr: 2 })).toBe(false);
     expect(displayCompatible(v, { ...v, scale: 1.1 })).toBe(false);
   });
+  it("keeps card scale across browser chrome height changes and flags width changes", () => {
+    expect(cardPlacementCompatible(v, { ...v, height: 720 })).toBe(true);
+    expect(cardPlacementCompatible(v, { ...v, width: 390 })).toBe(false);
+    expect(cardPlacementCompatible(v, { ...v, dpr: 2 })).toBe(false);
+  });
 });
 describe("off-axis projection", () => {
   for (const eye of [
@@ -127,10 +218,10 @@ describe("off-axis projection", () => {
       frustum({ x: 0, y: 0, z: 0 }, { left: -1, right: 1, top: 1, bottom: -1 }),
     ).toThrow();
   });
-  it("screen-plane near clipping preserves screen but rejects foreground", () => {
+  it("near-eye clipping preserves foreground, screen plane and back wall", () => {
     const e = { x: 0, y: 0, z: 400 },
       b = { left: -30, right: 30, top: 30, bottom: -30 },
-      f = frustum(e, b, 399.9, 4000),
+      f = frustum(e, b, 1, 4000),
       m = new Matrix4().makePerspective(
         f.left,
         f.right,
@@ -140,7 +231,8 @@ describe("off-axis projection", () => {
         f.far,
       );
     expect(new Vector3(0, 0, -400).applyMatrix4(m).z).toBeGreaterThan(-1);
-    expect(new Vector3(0, 0, -390).applyMatrix4(m).z).toBeLessThan(-1);
+    expect(new Vector3(0, 0, -380).applyMatrix4(m).z).toBeGreaterThan(-1);
+    expect(new Vector3(0, 0, -425.4).applyMatrix4(m).z).toBeLessThan(1);
   });
 });
 describe("intrinsics", () => {
@@ -167,3 +259,35 @@ it("never promotes an assumed camera profile into a reference", () =>
   expect(() => validateIntrinsics(assumedIntrinsics(640, 480))).toThrow(
     "source must be reference",
   ));
+
+it("does not reuse gaze correction across models, scale, orientation or estimator changes", () => {
+  const p = newProfile(v),
+    selection = { device: "unknown" as const, card: false, gaze: true };
+  p.gaze = {
+    version: 2,
+    fits: {
+      "unknown:baseline": {
+        context: gazeContext(baseModel(selection, p, v)),
+        fit: {
+          accepted: true,
+          delta: { x: 3, y: -4 },
+          validationBefore: 8,
+          validationAfter: 2,
+        },
+      },
+    },
+  };
+  expect(savedGazeFit(selection, p, v)).not.toBeNull();
+  expect(savedGazeFit({ ...selection, device: "reference" }, p, v)).toBeNull();
+  expect(savedGazeFit(selection, p, { ...v, dpr: 2 })).toBeNull();
+  p.placement = { originX: 0, originY: 10, provenance: "measured" };
+  expect(savedGazeFit(selection, p, v)).toBeNull();
+});
+it("foreground and background move in opposite directions relative to a screen-plane witness", () => {
+  const eye = { x: 50, y: 0, z: 400 };
+  expect(screenIntersection({ x: 0, y: 0, z: 20 }, eye).x).toBeLessThan(0);
+  expect(screenIntersection({ x: 0, y: 0, z: -25.4 }, eye).x).toBeGreaterThan(
+    0,
+  );
+  expect(screenIntersection({ x: 0, y: 0, z: 0 }, eye).x).toBe(0);
+});

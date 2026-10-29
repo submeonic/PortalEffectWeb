@@ -9,14 +9,15 @@ npm test
 npx playwright install chromium
 npm run test:e2e
 npm run simulate
-npm run build
-# In a separate terminal: npm run preview -- --port 4173
-node scripts/smoke-production.mjs
+PORTAL_BASE_PATH=/PortalEffectWeb/ npm run build
+# In a separate terminal (same base is required for accurate Pages emulation):
+# PORTAL_BASE_PATH=/PortalEffectWeb/ npm run preview -- --port 4174
+node scripts/smoke-production.mjs http://127.0.0.1:4174/PortalEffectWeb/
 ```
 
 Unit tests cover rotated card dimensions; content origin/viewport offsets; CSS-to-mm conversion; camera/display signs; column-major face pose; valid clipping; screen-plane registration for multiple eye and portal positions; parallax direction; distortion inversion; reference-stream compatibility; filtering resets; iris validity and ideal depth; constrained fitting, degeneracy and held-out rejection; missing-reference semantics and deterministic bootstrap.
 
-Browser tests cover desktop/mobile rendering, slider control, card persistence, aspect ratio, recording/export, permission denial, diagnostics, synthetic results, real MediaPipe image inference and the complete worker-driven tracker using a portrait canvas stream. The latter is **fixture-driven model execution**, not a real camera or human subject measurement. Software-rendered Chromium speed is not representative of the iPhone GPU/CPU. Desktop viewport emulation cannot establish Safari compatibility.
+Browser tests cover desktop/mobile rendering, uniform room materials and square columns, scroll attachment, foreground clipping, full-screen inspection, independent model selection, slider control, card persistence, aspect ratio, recording/export, permission denial, diagnostics, synthetic results, real MediaPipe image inference and the complete worker-driven tracker using a portrait canvas stream, real ONNX 3D gaze inference, lazy model loading, same-frame live collection and cancellation with head tracking still running. Unit tests also drive the complete six-target state machine with explicitly synthetic rays, including successful fitting, held-out failure and cancellation during inference. The latter is **fixture-driven model execution**, not a real camera or human subject measurement. Software-rendered Chromium speed is not representative of the iPhone GPU/CPU. Desktop viewport emulation cannot establish Safari compatibility.
 
 The model package references a missing source-map filename during Vite development. This diagnostic does not affect model inference or the production bundle. Keep it separate from actual runtime exceptions.
 
@@ -24,12 +25,12 @@ The model package references a missing source-map filename during Vite developme
 
 Record date, iPhone model, iOS/Safari versions, display zoom/text size, page zoom, browser chrome state, brightness, ambient lighting, glasses, participant code and whether Low Power Mode is enabled. Do not put participant names in shared exports. Use portrait, 100% page zoom and the secure-origin instructions in README.
 
-1. Open Portal. Verify a visible cube and grid without granting camera permission.
-2. Move simulator X from −50 to +50, Y from −50 to +50 and Z from 250 to 600 mm. The cube must remain behind the screen. The screen-plane border must not rotate with the head.
+1. Open Portal. Verify two visible compartment windows and a foreground cube without granting camera permission.
+2. Move simulator X from −50 to +50, Y from −50 to +50 and Z from 250 to 600 mm. The cube straddles the screen plane: front and back geometry should move oppositely relative to the screen-plane witness marks. The screen-plane border must not rotate with the head.
 3. Enable head tracking. Verify no full-screen video takeover. Record startup duration and actual stream dimensions in Diagnostics. Confirm the backend field; note any fallback reason.
 4. Move physically right while facing the screen. The reported screen X should increase. Move up: screen Y should increase. Move closer: Z should decrease. Preview should behave like a mirror but toggling preview styling must not invert geometry.
 5. Temporarily obscure the face. Raw observations must become missing, rendering should ease safely, and reacquisition must not jump to non-finite geometry.
-6. Scroll with the camera active. Portal bounds must follow the DOM location, not document-origin coordinates. Open the second window and compare both using the same eye model.
+6. Scroll with the camera active. Portal bounds must follow the DOM location, not document-origin coordinates. Compare A/B using the same tracking observations but independent models. The contents must travel with their aperture while perspective updates. Scroll down to Inspection, select the reference condition, choose Fill screen, and assess the 32 mm cube at center 0 and +12 mm.
 7. Capture an initial diagnostic JSON and note any errors before beginning measurements.
 
 ## Stage A: baseline
@@ -73,11 +74,17 @@ The schema example in docs is deliberately marked **assumed**, so the reference 
 7. Import the measured reference **before recording** the comparison session. Add a `configuration` map with relevant known track settings when appropriate. Any declared fields must match exactly. Recalibrate rather than silently rescale an unknown crop.
 8. Compare assumed/reference iris depth on matched recorded observations using the Replay baseline selector. Also compare zero correction versus supplied distortion. Changing this reference does not recalibrate MediaPipe's internal face-matrix model.
 
-## Stage E: gaze (external research path)
+## Stage E: live gaze experiment
 
-Live gaze inference and automated fixation UI remain unavailable. Use docs/GAZE.md to validate a genuine estimator before collecting rays. Export observations with camera-frame origins/directions, mm screen targets, target ID, quality, heldOut and provenance. Four corner targets train; the center target is withheld. Repeated center samples from the same recording are not an independent subject replication.
+1. In Calibration, measure card scale first when available. Record the physical content origin and its uncertainty. Keep portrait orientation, 100% zoom and stable Safari chrome.
+2. Start gaze calibration. Confirm model load succeeds and the UI remains responsive. Look at the four corner dots without moving the phone. Each waits 900 ms, then collects ≥12 samples over ≥1.8 seconds.
+3. Look at the center. For the final center, move your head 2–3 cm sideways and settle. The collector checks ≥15 mm estimated displacement; neither center is used in fitting.
+4. Inspect all model conditions in Results. Acceptance needs >5% and ≥1 mm held-out RMS reduction with residual ≤10 mm; each center pose must pass individually. Failed, reversed-ray, ill-conditioned or out-of-bounds fits must leave baselines intact.
+5. Save accepted refinements. Return to Portal and compare unknown, unknown+scale, unknown+gaze and unknown+both against reference using A/B and the large inspection window. An unaccepted condition must stay disabled; success on one model does not authorize another.
+6. Export gaze evidence and session JSON before closing. Report rejected counts, reasons, load time, inference median/p95 from the recorded samples, collection time and failure rate. Repeat at new distances/head positions, then use independent physical measurements before asserting improved alignment.
+7. Cancel while loading, while a model frame is in flight, and during fixation. Change orientation/viewport, background the page and stop the camera. The model must unload and ordinary tracking must recover or offer a clear restart. Reopen calibration to verify recovery.
 
-Import observations in Calibration. Confirm rejected, out-of-bounds, reversed-ray or ill-conditioned fits cannot change the baseline. An accepted translation must improve the separate target, then be tested at new positions/distances. Do not characterize external gaze accuracy from a synthetic fit.
+See [GAZE.md](docs/GAZE.md) for pinned assets, preprocessing/sign conventions, the face-crop deviation and external-ray schema. Validate live left/right/up/down gaze direction with an independent protocol; the desktop portrait is not an angular ground truth fixture. No target-error gate should select samples. A constant model bias may still pass center checks, so report ray consistency separately from independent physical accuracy.
 
 ## Stage F: perceptual study
 
@@ -85,7 +92,7 @@ Keep scene, size, lighting and motion instructions fixed. Start randomized blind
 
 ## Stage G: calibration cost and recommendation
 
-Extract camera startup events, card duration and repeated measurement effort. Gaze-loading/fixation time is unavailable until a real model is integrated. Compare benefit and cost using RESULTS.md. Do not claim one method wins from one subjective trial or a frame-level bootstrap with autocorrelated data.
+Extract camera startup events, card duration and repeated measurement effort. Extract gaze load/fixation duration, per-sample inference time, rejection counts and failed/interrupted runs from the gaze evidence. Compare benefit and cost using RESULTS.md. Do not claim one method wins from one subjective trial or a frame-level bootstrap with autocorrelated data.
 
 ## Failure matrix
 
@@ -95,18 +102,18 @@ Extract camera startup events, card duration and repeated measurement effort. Ga
 | Offline after asset preparation | Local model/WASM available; fonts may fall back |
 | Rotate phone | Live calibrated rendering suspends; return to portrait and recheck placement |
 | Pinch/page zoom; display zoom | Suspension or profile incompatibility; repeat scale calibration |
-| Collapse/expand Safari bars or open keyboard | Record viewport change; card-mode placement must be reconfirmed |
+| Collapse/expand Safari bars or open keyboard | Record viewport change; scale survives height-only changes, but physical content origin must be rechecked |
 | Dynamic Island and safe areas | Controls remain usable; diagnostic inset data recorded; no claims that safe-area CSS gives camera optical center |
 | Camera format/crop changes | Format event and trial boundary; incompatible reference rejected |
 | Unobserved focus/stabilization changes | Known limitation; compare reference validity independently |
 | Poor lighting, partial face, glasses, blink | Detection/iris rejection recorded; no unbounded eye jumps |
 | Rapid motion, large yaw/pitch | Track jitter/loss; iris rejection at large pose; no raw-Z metric substitution |
 | Face-scale bias | Depth errors persist despite stable tracking; compare independent distances |
-| Systematic gaze bias | Test synthetic biased rays and external withheld head positions; baseline preserved on failed fit |
+| Systematic gaze bias | Test synthetic biased rays and live withheld head positions; baseline preserved on failed fit |
 | Slow inference | One frame in flight; worker preserves UI; fallback may block; record backend and actual timing |
 | 10–20 minute thermal run | Export periodic trials and diagnostics; report rate changes and crashes, if any |
 | Background and return | Camera state resets safely; retry required if the stream ended |
-| Multiple portal positions / scroll | Shared eye model, independently updated aperture rectangles |
+| Multiple portal positions / scroll | Shared camera observations, independently transformed eyes and updated aperture/scene positions |
 | Export and reload | Profile persists; exported trials reimport; memory-only unexported trials are not recoverable |
 
 No row in this hardware matrix is marked passed until someone performs it on the physical iPhone.

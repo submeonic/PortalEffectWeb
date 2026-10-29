@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 test("real MediaPipe inference on a known portrait fixture produces metric pose", async ({
   page,
 }) => {
@@ -55,6 +56,16 @@ test("camera pipeline uses worker inference and records replayable fixture obser
   });
   const page = await context.newPage();
   await page.addInitScript(() => {
+    // Playwright's mobile emulation couples screen size to viewport size.
+    // A real phone keeps its physical screen size when browser content resizes.
+    Object.defineProperty(screen, "width", {
+      configurable: true,
+      get: () => 402,
+    });
+    Object.defineProperty(screen, "height", {
+      configurable: true,
+      get: () => 874,
+    });
     navigator.mediaDevices.getUserMedia = async () => {
       const image = new Image();
       image.src = "/tests/fixtures/portrait.jpg";
@@ -82,11 +93,36 @@ test("camera pipeline uses worker inference and records replayable fixture obser
   await page.waitForTimeout(900);
   await page.locator("#stop-trial").click();
   await expect(page.locator("#trial-list")).toContainText("camera");
+  const download = page.waitForEvent("download");
+  await page.locator("#export-json").click();
+  const session = JSON.parse(
+    await readFile(await (await download).path(), "utf8"),
+  );
+  const sample = session.trials[0].samples.find((s: { raw: unknown }) => s.raw);
+  expect(session.trials[0].windowModels).toHaveLength(3);
+  expect(sample.windowEyes).toHaveLength(3);
+  expect(sample.raw).toEqual(sample.windowEyes[0]);
   await page.locator("#run-paired").click();
   await expect(page.locator("#paired-results")).toContainText(
     "matchedIndependentErrors",
   );
   await page.getByRole("button", { name: "Portal", exact: true }).click();
+  await page.getByRole("button", { name: "Calibration", exact: true }).click();
+  await page.locator("#open-card").click();
+  await page.locator("#card-width").fill("300");
+  await page.locator("#save-card").click();
+  await page.getByRole("button", { name: "Portal", exact: true }).click();
+  await page.locator("#card-a").check();
+  await page.setViewportSize({ width: 402, height: 800 });
+  await expect(page.locator("#portal-main")).not.toHaveClass(/suspended/);
+  await page.setViewportSize({ width: 390, height: 800 });
+  await expect(page.locator("#portal-main")).toHaveClass(/suspended/);
+  await page.getByRole("button", { name: "Calibration", exact: true }).click();
+  await expect(page.locator("#placement-recovery")).toBeVisible();
+  await page.locator("#confirm-placement").click();
+  await expect(page.locator("#placement-recovery")).toBeHidden();
+  await page.getByRole("button", { name: "Portal", exact: true }).click();
+  await expect(page.locator("#portal-main")).not.toHaveClass(/suspended/);
   await page.locator("#stop-camera").click();
   await expect(page.locator("#tracking-state")).toContainText("Camera is off");
   await context.close();

@@ -43,6 +43,32 @@ export function validateTrials(value: unknown): Trial[] {
       throw Error("Invalid trial");
     validateProfile(t.profile);
     validateCondition(t.condition);
+    if (
+      t.windowModels &&
+      (!Array.isArray(t.windowModels) ||
+        ![2, 3].includes(t.windowModels.length) ||
+        t.windowModels.some(
+          (m) =>
+            !["reference", "unknown"].includes(m.device) ||
+            typeof m.card !== "boolean" ||
+            typeof m.gaze !== "boolean",
+        ))
+    )
+      throw Error("Invalid comparison window configuration");
+    if (t.resolvedModels) {
+      if (
+        !Array.isArray(t.resolvedModels) ||
+        ![2, 3].includes(t.resolvedModels.length)
+      )
+        throw Error("Invalid resolved models");
+      for (const model of t.resolvedModels)
+        validateProfile({
+          ...t.profile,
+          transform: model.cameraToScreen,
+          mmPerCss: model.mmPerCss,
+          viewport: model.viewport,
+        });
+    }
     for (const s of t.samples) {
       const o = s.observation;
       if (
@@ -61,6 +87,14 @@ export function validateTrials(value: unknown): Trial[] {
         ) ||
         !vector(s.raw) ||
         !vector(s.filtered) ||
+        (s.windowFilteredEyes !== undefined &&
+          (!Array.isArray(s.windowFilteredEyes) ||
+            ![2, 3].includes(s.windowFilteredEyes.length) ||
+            !s.windowFilteredEyes.every(vector))) ||
+        (s.windowEyes !== undefined &&
+          (!Array.isArray(s.windowEyes) ||
+            ![2, 3].includes(s.windowEyes.length) ||
+            !s.windowEyes.every(vector))) ||
         !(
           s.referenceDistanceMm === null ||
           (Number.isFinite(s.referenceDistanceMm) && s.referenceDistanceMm > 0)

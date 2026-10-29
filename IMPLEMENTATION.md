@@ -1,11 +1,12 @@
-# Implementation plan and research risks
+# Implementation and architectural decisions
 
-1. Establish typed coordinate models, off-axis renderer, synthetic eye controls and numerical tests.
-2. Integrate one-face MediaPipe capture, real numerical observations, smoothing and safe tracking loss.
-3. Add nominal/generic/card display scales, repeatable card trials and versioned reference import.
-4. Add conditions, recorded paired evaluation, diagnostics and JSON/CSV export.
-5. Add iris depth, distortion correction and reference-camera tools.
-6. Evaluate gaze model feasibility; implement limited, independently validated fitting without making gaze a baseline dependency.
-7. Run numerical and browser checks, document hardware acceptance and honest milestone status.
+Baseline: `e057ab5` on master. Read the full correction specification, existing source/tests/docs and `prev-rev` notes before editing. Retained Vite/TypeScript, Three.js, MediaPipe capture/worker fallback, metric eye estimators, filters, numerical recording, replay, assessments, import/export and the GitHub Pages workflow. Reused the prior attempt's comparison scaffolding and portal-local placement fix after inspection; replaced its visual materials/rods and its deferred gaze boundary.
 
-Risks: camera metric scale is not ground truth; delivered crops can invalidate intrinsics; viewport top position relative to the physical panel is not fully exposed by Safari; gaze bias can be indistinguishable from camera placement; physical device testing requires a real iPhone. Label all estimates and preserve raw numeric input. No public deployment. No raw frames retained by default.
+- `geometry/coordinate-model.ts` resolves the two device conditions, saved card scale, explicit content origin and compatible gaze fits. Unknown Device has no iPhone physical inputs. Per-condition provenance is displayed and exported.
+- `rendering/portal.ts` keeps geometry local to each HTML aperture, updates the physical root every frame, uses a 1 mm near plane and a parallel 25.4 mm back wall, and retains the existing rendering-method controls. A/B share metric geometry; inspection enlarges the cube to 32 mm. Shared wall material, square columns and real point lights/shadows provide depth cues.
+- `tracking/tracker.ts` retains the existing live path, adding a frozen-frame callback only while gaze calibration is active. One frame remains in flight; the same image underlies both eye-origin and gaze-direction inference.
+- `gaze/provider.ts`, `gaze/math.ts` and `public/gaze-worker.js` handle the pinned appearance model, normalization/vector convention, timeouts and worker disposal. No target-trained screen regressor or iris-center proxy is used.
+- `gaze/calibration.ts` owns target sequencing, settling, quality/motion gates, timing, independent center checks and per-model fitting. `optimization/gaze-fit.ts` retains robust bounded tx/ty fitting and adds a 1 mm absolute improvement threshold.
+- `main.ts` binds the existing interface/research flow to independent A/B/Inspection models and the calibration lifecycle. Compact accepted transforms persist; full numerical gaze runs remain exportable in memory. Existing v1 trial exports still import; new exports add three model selections, resolved transforms, per-window raw/filtered eyes and viewport data.
+
+The physical browser content origin, monocular eye scale, camera optical center and gaze bias remain uncertainties. Research assumptions and deviations are documented in RESEARCH.md and docs/GAZE.md. No physical accuracy or iPhone runtime results are invented. Work is local; no push or deployment is authorized in this iteration.

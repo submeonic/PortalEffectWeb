@@ -6,6 +6,11 @@ type FrameResult = Pick<
 >;
 export class Tracker {
   model: FaceLandmarker | null = null;
+  // Calibration hook receives the exact frozen frame used for the face estimate.
+  onFrame:
+    | ((observation: Observation, frame: HTMLCanvasElement) => Promise<void>)
+    | null = null;
+  private frame = document.createElement("canvas");
   running = false;
   targetHz = 24;
   delegate = "initializing";
@@ -110,8 +115,16 @@ export class Tracker {
         this.lastVideo = video.currentTime;
         try {
           let result: FrameResult;
+          const hook = this.onFrame;
+          let source: HTMLVideoElement | HTMLCanvasElement = video;
+          if (hook) {
+            this.frame.width = video.videoWidth;
+            this.frame.height = video.videoHeight;
+            this.frame.getContext("2d")!.drawImage(video, 0, 0);
+            source = this.frame;
+          }
           if (this.worker) {
-            const bitmap = await createImageBitmap(video);
+            const bitmap = await createImageBitmap(source);
             if (!this.running) {
               bitmap.close();
               return;
@@ -136,7 +149,7 @@ export class Tracker {
             });
           } else {
             const inferenceStarted = performance.now(),
-              r = this.model!.detectForVideo(video, started);
+              r = this.model!.detectForVideo(source, started);
             result = {
               matrix: r.facialTransformationMatrixes[0]?.data ?? null,
               landmarks: r.faceLandmarks[0] ?? [],
@@ -145,7 +158,7 @@ export class Tracker {
             };
           }
           if (!this.running) return;
-          callback({
+          const observation: Observation = {
             ...result,
             time: started,
             source: "camera",
@@ -154,7 +167,11 @@ export class Tracker {
             intervalMs: this.lastTime ? started - this.lastTime : 0,
             quality: null,
             processingMs: performance.now() - started,
-          });
+          };
+          callback(observation);
+          // Hook handles its own inference failures; normal tracking stays usable.
+          if (hook && this.onFrame === hook)
+            await hook(observation, this.frame);
           this.lastTime = started;
           if (result.inferenceMs > 45)
             this.targetHz = Math.max(10, this.targetHz - 1);
@@ -176,6 +193,8 @@ export class Tracker {
   }
   stop() {
     this.running = false;
+    this.onFrame = null;
+    this.frame.width = this.frame.height = 0;
     clearTimeout(this.timer);
     this.failed?.(Error("Tracking stopped"));
     this.pending = null;

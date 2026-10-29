@@ -21,7 +21,7 @@ export function newProfile(v: Viewport): Profile {
     timestamp: new Date().toISOString(),
     screenMode: "nominal",
     mmPerCss: NOMINAL_SCALE,
-    viewport: v,
+    viewport: { ...v },
     transform: defaultTransform(),
     cards: [],
   };
@@ -61,6 +61,12 @@ export function validateProfile(value: unknown): Profile {
     )
   )
     throw Error("Invalid card calibration");
+  if (
+    p.placement &&
+    (![p.placement.originX, p.placement.originY].every(Number.isFinite) ||
+      !p.placement.provenance)
+  )
+    throw Error("Invalid explicit viewport placement");
   const t = p.transform;
   if (
     !t ||

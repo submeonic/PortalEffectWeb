@@ -1,7 +1,8 @@
 import type { Trial, Condition, Vec3 } from "../types";
 import { estimate } from "../tracking/pose";
 import { PoseFilter } from "../filtering/filters";
-import { norm, sub } from "../geometry/math";
+import { modelEye } from "../geometry/coordinate-model";
+import { norm, sub, transform } from "../geometry/math";
 export function percentile(values: number[], p: number): number | null {
   const a = values.filter(Number.isFinite).sort((a, b) => a - b);
   if (!a.length) return null;
@@ -94,17 +95,26 @@ export function replay(t: Trial, condition: Condition) {
     samples: t.samples.map((s) => {
       if (s.observation.source !== "camera") return { ...s };
       const e = estimate(s.observation, condition, t.profile);
+      const filteredCamera = e
+        ? filter.update(
+            e.eyeCamera,
+            s.observation.time,
+            condition.filter,
+            condition.predictionMs,
+          )
+        : null;
       return {
         ...s,
         raw: e?.eyeScreen ?? null,
-        filtered: e
-          ? filter.update(
-              e.eyeScreen,
-              s.observation.time,
-              condition.filter,
-              condition.predictionMs,
-            )
+        filtered: filteredCamera
+          ? transform(filteredCamera, t.profile.transform)
           : null,
+        windowEyes: t.resolvedModels?.map((m) =>
+          e ? modelEye(e.eyeCamera, m) : null,
+        ),
+        windowFilteredEyes: t.resolvedModels?.map((m) =>
+          filteredCamera ? modelEye(filteredCamera, m) : null,
+        ),
         faceDepth: e?.faceDepth ?? null,
         irisDepth: e?.irisDepth ?? null,
       };
@@ -126,6 +136,7 @@ export function paired(t: Trial, a: Condition, b: Condition) {
   }
   return {
     configurations: { a, b },
+    windowAgreement: modelAgreement(t),
     profileId: t.profile.id,
     a: summarize(aa),
     b: summarize(bb),
@@ -135,6 +146,28 @@ export function paired(t: Trial, a: Condition, b: Condition) {
     interpretation:
       "B minus A absolute error. Negative favors B. Frame bootstrap assumes independent samples; temporal autocorrelation makes this optimistic. Prefer independent trial-level replications.",
   };
+}
+export function modelAgreement(t: Trial) {
+  return [1, 2].flatMap((i) => {
+    if (!t.windowModels?.[i]) return [];
+    const deltas = t.samples.flatMap((s) =>
+      s.windowEyes?.[0] && s.windowEyes[i]
+        ? [sub(s.windowEyes[i]!, s.windowEyes[0]!)]
+        : [],
+    );
+    return [
+      {
+        window: i === 1 ? "B" : "Inspection",
+        reference: "A",
+        matchedSamples: deltas.length,
+        xMm: stats(deltas.map((d) => d.x)),
+        yMm: stats(deltas.map((d) => d.y)),
+        zMm: stats(deltas.map((d) => d.z)),
+        displacementMm: stats(deltas.map(norm)),
+        note: "Model agreement on identical observations; not independent physical accuracy.",
+      },
+    ];
+  });
 }
 export function bootstrap(values: number[], seed = 1234) {
   if (values.length < 5) return null;
@@ -160,6 +193,15 @@ export function csv(trials: Trial[]) {
       "time_ms",
       "source",
       "display",
+      "window_a_device",
+      "window_b_device",
+      "inspection_device",
+      "window_a_card",
+      "window_b_card",
+      "window_a_gaze",
+      "window_b_gaze",
+      "inspection_card",
+      "inspection_gaze",
       "depth",
       "filter",
       "x_mm",
@@ -168,6 +210,12 @@ export function csv(trials: Trial[]) {
       "filtered_x",
       "filtered_y",
       "filtered_z",
+      "window_b_x",
+      "window_b_y",
+      "window_b_z",
+      "inspection_x",
+      "inspection_y",
+      "inspection_z",
       "face_depth",
       "iris_depth",
       "reference_mm",
@@ -181,7 +229,16 @@ export function csv(trials: Trial[]) {
         t.id,
         String(s.observation.time),
         s.observation.source,
-        t.condition.display,
+        t.profile.screenMode,
+        t.windowModels?.[0]?.device ?? "",
+        t.windowModels?.[1]?.device ?? "",
+        t.windowModels?.[2]?.device ?? "",
+        String(t.windowModels?.[0]?.card ?? ""),
+        String(t.windowModels?.[1]?.card ?? ""),
+        String(t.windowModels?.[0]?.gaze ?? ""),
+        String(t.windowModels?.[1]?.gaze ?? ""),
+        String(t.windowModels?.[2]?.card ?? ""),
+        String(t.windowModels?.[2]?.gaze ?? ""),
         t.condition.depth,
         t.condition.filter,
         ...(["x", "y", "z"] as (keyof Vec3)[]).map((k) =>
@@ -189,6 +246,12 @@ export function csv(trials: Trial[]) {
         ),
         ...(["x", "y", "z"] as (keyof Vec3)[]).map((k) =>
           String(s.filtered?.[k] ?? ""),
+        ),
+        ...(["x", "y", "z"] as (keyof Vec3)[]).map((k) =>
+          String(s.windowEyes?.[1]?.[k] ?? ""),
+        ),
+        ...(["x", "y", "z"] as (keyof Vec3)[]).map((k) =>
+          String(s.windowEyes?.[2]?.[k] ?? ""),
         ),
         String(s.faceDepth ?? ""),
         String(s.irisDepth ?? ""),

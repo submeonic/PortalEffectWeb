@@ -99,3 +99,8 @@ export function displayCompatible(a: Viewport, b: Viewport) {
     a.orientation === b.orientation
   );
 }
+// Browser chrome often changes innerHeight without changing physical pixel
+// pitch or the horizontal layout. That alone must not invalidate card scale.
+export function cardPlacementCompatible(a: Viewport, b: Viewport) {
+  return displayCompatible(a, b) && a.width === b.width;
+}

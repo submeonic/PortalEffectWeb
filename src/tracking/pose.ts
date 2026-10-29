@@ -107,9 +107,9 @@ export function estimate(
   const eyeScreen = transform(eye, p.transform);
   if (
     !finite(eyeScreen) ||
-    eyeScreen.z < 80 ||
-    Math.abs(eyeScreen.x) > 600 ||
-    Math.abs(eyeScreen.y) > 700
+    eye.z < 80 ||
+    Math.abs(eye.x) > 600 ||
+    Math.abs(eye.y) > 700
   )
     return null;
   return {

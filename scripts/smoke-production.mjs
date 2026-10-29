@@ -53,8 +53,19 @@ try {
   await page.waitForFunction(() =>
     document.querySelector("#delegate").textContent.includes("worker CPU"),
   );
+  await page.getByRole("button", { name: "Calibration", exact: true }).click();
+  await page.locator("#start-gaze").click();
+  await page
+    .locator("#gaze-target")
+    .waitFor({ state: "visible", timeout: 60000 });
+  await page.waitForFunction(
+    () => Number(document.querySelector("#gaze-progress-bar").value) > 0,
+    {},
+    { timeout: 30000 },
+  );
+  await page.locator("#cancel-gaze").click();
   console.log(
-    "PASS: production static assets, model and worker inference; portrait fixture only, no physical camera.",
+    "PASS: production subpath assets, MediaPipe worker, real gaze worker and synchronized collection; fixture only, no physical camera.",
   );
 } finally {
   await browser.close();
