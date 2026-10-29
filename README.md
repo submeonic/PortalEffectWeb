@@ -2,7 +2,7 @@
 
 A mobile-first, head-tracked Three.js window and calibration research prototype. Built with Vite, TypeScript, MediaPipe Face Landmarker, Vitest and Playwright. It runs as an ordinary web page: no WebXR session, backend, account, or camera upload.
 
-**Status:** working local prototype; automated numerical and Chromium integration tests pass. Actual iPhone 16 Pro / Mobile Safari behavior and physical accuracy remain **awaiting hardware verification**. No public deployment or remote push has been performed.
+**Status:** working prototype; automated numerical and Chromium integration tests pass. Actual iPhone 16 Pro / Mobile Safari behavior and physical accuracy remain **awaiting hardware verification**. GitHub Pages deployment is configured for pushes to `master`.
 
 ## Run locally
 
@@ -52,7 +52,9 @@ Local HTTPS keeps the project on your network:
 5. On the same network, open `https://192.168.1.20:5173` in Safari. Replace the example IP with your actual IP. Allow port 5173 through your computer's firewall. An execution container's loopback address is not reachable from the phone; run these commands on a LAN-accessible host or configure host port forwarding.
 6. Hold the phone in portrait, use 100% page zoom, and enable head tracking. Check Diagnostics for the **actual** delivered video dimensions and backend.
 
-If you prefer hosted HTTPS later, `npm run build` produces static `dist/` suitable for any HTTPS static host. Serve `.wasm` as `application/wasm`, `.js` as JavaScript, and the `.task` model as binary. For a subdirectory build, set `PORTAL_BASE_PATH=/your-path/ npm run build`. No deployment has been initiated. Ordinary HTTPS hosting does not require COOP/COEP for this single-threaded worker model.
+The GitHub Actions workflow in [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) deploys to GitHub Pages whenever `master` is pushed, and can also be run manually from the Actions tab. It installs dependencies, prepares the versioned model and WASM assets, builds with `PORTAL_BASE_PATH=/PortalEffectWeb/`, and publishes `dist/` at `https://submeonic.github.io/PortalEffectWeb/`. The initial deployment starts after this workflow is pushed to `master`.
+
+For another HTTPS static host, `npm run assets` followed by `npm run build` produces static `dist/`. Serve `.wasm` as `application/wasm`, `.js` as JavaScript, and the `.task` model as binary. For a subdirectory build, set `PORTAL_BASE_PATH=/your-path/ npm run build`. Ordinary HTTPS hosting does not require COOP/COEP for this single-threaded worker model.
 
 ## What works
 
