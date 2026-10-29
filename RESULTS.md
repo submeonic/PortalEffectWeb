@@ -19,8 +19,11 @@
 
 | Condition | Valid frames % | Depth absolute error median / p95 (mm) | Stationary Z SD (mm) | Raw / filtered displacement | Inference median / p95 (ms) | Render median / p95 (ms) | Calibration time |
 |---|---|---|---|---|---|---|---|
-| Nominal + face matrix + One Euro | — | — | — | — | — | — | — |
-| Card + face matrix + One Euro | — | — | — | — | — | — | — |
+| iPhone 16 Pro reference + face matrix + One Euro | — | — | — | — | — | — | — |
+| Unknown Device baseline + face matrix + One Euro | — | — | — | — | — | — | — |
+| Unknown Device + card scale | — | — | — | — | — | — | — |
+| Unknown Device + accepted gaze correction | — | — | — | — | — | — | — |
+| Unknown Device + card and gaze | — | — | — | — | — | — | — |
 | Assumed iris + One Euro | — | — | — | — | — | — | — |
 | Reference iris + One Euro | — | — | — | — | — | — | — |
 | Fixed 50/50 fusion | — | — | — | — | — | — | — |
@@ -48,7 +51,7 @@ Pre-register a practically meaningful improvement before collecting data (exampl
 | Iris depth | Unknown | No additional user action | Small numerical overhead | Retest |
 | Gaze refinement | Unknown | Model/fixation cost unmeasured | Calibration-only model cost | Deferred |
 
-Starting condition for the first study: nominal profile + face matrix + One Euro. This is a low-effort baseline, **not a proven winner**. Prefer the simplest condition whose independently measured benefit is reproducible, stable across head positions and meaningful relative to reference uncertainty. If improvements are within measurement noise, preserve the simpler baseline.
+Starting conditions for the first study: iPhone reference and Unknown Device baseline, both using the same observations, face matrix and One Euro. This is a low-effort baseline, **not a proven winner**. Prefer the simplest condition whose independently measured benefit is reproducible, stable across head positions and meaningful relative to reference uncertainty. If improvements are within measurement noise, preserve the simpler baseline.
 
 ## Milestone interpretation
 

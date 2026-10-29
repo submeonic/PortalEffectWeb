@@ -58,12 +58,12 @@ For another HTTPS static host, `npm run assets` followed by `npm run build` prod
 
 ## What works
 
-- A cube, multiple-depth cubes, tunnel and wireframe scenes, physical frame and reference floor.
-- Asymmetric perspective frusta from an explicit physical eye and the actual DOM canvas rectangle. Two portals share the same eye model.
+- A 25.4 mm deep screen-aligned compartment with back wall, side walls, edge rods and a fixed 12 mm cube half inside and half outside, plus multiple-cube, tunnel and wireframe variants.
+- Asymmetric perspective frusta from each live DOM canvas rectangle. The two always-visible portals share camera observations but independently construct reference or unknown-device coordinate models. Scrolling moves the chamber with its aperture.
 - Simulated X/Y/Z controls, static perspective and naive rotation controls for comparison.
 - Real single-face MediaPipe tracking, canonical eye proxies, head rotation, raw/filtered eye positions, graceful tracking loss, optional bounded prediction through saved configurations.
 - CPU inference in a classic worker when supported, with one frame in flight. GPU/CPU main-thread fallback, adaptive tracking target, and measured inference versus render intervals.
-- Nominal iPhone, generic and randomized repeatable credit-card scale calibration with local persistence and profile export/import.
+- Reference iPhone and generic Unknown Device priors, independently selectable saved physical-scale and gaze-correction switches, and randomized repeatable credit-card scale calibration with local persistence and profile export/import.
 - Iris depth with assumed or imported reference intrinsics, Brown–Conrady distortion inversion and a clearly experimental 50/50 fusion condition.
 - Diagnostics, numerical recording, independent distance annotations, paired replay, summary statistics, randomized blind rendering comparisons, 1–7 ratings, comments, JSON/CSV export and JSON reimport.
 - Seeded synthetic geometry studies and bounded X/Y gaze-ray fitting with regularization, conditioning checks, robust weighting, physical bounds and a withheld validation target.
@@ -71,7 +71,7 @@ For another HTTPS static host, `npm run assets` followed by `npm run build` prod
 
 ## First physical evaluation
 
-1. In Portal, confirm simulated positive X changes perspective appropriately while the room stays fixed. Try each scene and the second portal.
+1. In Portal, compare the two stacked windows. Confirm simulated positive X changes perspective appropriately, and scroll to check that each shallow compartment stays attached to its HTML window.
 2. Enable the camera. Move left/right and up/down; verify signs and loss/reacquisition. Export Diagnostics.
 3. In Calibration, measure a portrait credit card five times. Compare variance and nominal agreement. Enter the physical content-origin offset under Advanced placement if known.
 4. In Experiments, record stationary trials at independently measured 250, 400 and 600 mm. Write the measurement method and head orientation. Navigate to Portal while recording to collect actual rendered-frame statistics; return to Experiments to finish.
@@ -83,8 +83,8 @@ For another HTTPS static host, `npm run assets` followed by `npm run build` prod
 
 Calibration persists in browser localStorage. Recorded trials remain in memory until exported, are capped at 900 observations per trial, and can be reimported. Export regularly. JSON is the reproducible record (configuration, profile, original landmarks/matrices, timestamps and metadata); CSV is a flat analysis convenience. No camera images are recorded unless the explicit reference-frame checkbox is enabled and Download is clicked. Numeric facial observations are still personal research data; store exports accordingly.
 
-Nominal geometry and MediaPipe metric depth are assumptions/estimates. Credit-card agreement with a manufacturer number is not independent accuracy. Iris diameter and focal length are confounded. The browser does not reliably expose the physical top of its content area relative to the whole display. Card-mode live rendering suspends after relevant viewport changes until placement is confirmed. Unseen focus/crop/stabilization changes can still invalidate camera reference profiles.
+Nominal geometry and MediaPipe metric depth are assumptions/estimates. Credit-card agreement with a manufacturer number is not independent accuracy. Iris diameter and focal length are confounded. The browser does not reliably expose the physical top of its content area relative to the whole display. A selected card-scale window pauses after relevant viewport changes until placement is confirmed; other windows remain active. Unseen focus/crop/stabilization changes can still invalidate camera reference profiles.
 
-Live gaze-model inference and automatic four-corner fixation collection are **not integrated**. The advanced importer accepts externally supplied genuine 3D gaze observations; the fit is implemented and tested. See [GAZE.md](docs/GAZE.md) for model research and the remaining device/license/convention validation gates. No iris-center approximation is presented as gaze.
+Live gaze-model inference and automatic four-corner fixation collection are **not integrated**; see the specific model and validation limitations in GAZE.md. The advanced importer accepts externally supplied genuine 3D gaze observations; the fit is implemented and tested. See [GAZE.md](docs/GAZE.md) for model research and the remaining device/license/convention validation gates. No iris-center approximation is presented as gaze.
 
 Read [RESEARCH.md](RESEARCH.md) for coordinate conventions, estimands and limitations; [RESULTS.md](RESULTS.md) for the evidence-based report template; [MILESTONES.md](MILESTONES.md) for implementation and verification status.

@@ -25,11 +25,11 @@ The model package references a missing source-map filename during Vite developme
 Record date, iPhone model, iOS/Safari versions, display zoom/text size, page zoom, browser chrome state, brightness, ambient lighting, glasses, participant code and whether Low Power Mode is enabled. Do not put participant names in shared exports. Use portrait, 100% page zoom and the secure-origin instructions in README.
 
 1. Open Portal. Verify a visible cube and grid without granting camera permission.
-2. Move simulator X from −50 to +50, Y from −50 to +50 and Z from 250 to 600 mm. The cube must remain behind the screen. The screen-plane border must not rotate with the head.
+2. Move simulator X from −50 to +50, Y from −50 to +50 and Z from 250 to 600 mm. The cube should appear half in front of the screen; the back wall should remain about 25.4 mm behind the screen under the selected scale model. The screen-plane border must not rotate with the head.
 3. Enable head tracking. Verify no full-screen video takeover. Record startup duration and actual stream dimensions in Diagnostics. Confirm the backend field; note any fallback reason.
 4. Move physically right while facing the screen. The reported screen X should increase. Move up: screen Y should increase. Move closer: Z should decrease. Preview should behave like a mirror but toggling preview styling must not invert geometry.
 5. Temporarily obscure the face. Raw observations must become missing, rendering should ease safely, and reacquisition must not jump to non-finite geometry.
-6. Scroll with the camera active. Portal bounds must follow the DOM location, not document-origin coordinates. Open the second window and compare both using the same eye model.
+6. Scroll with the camera active. Portal bounds must follow the DOM location, not document-origin coordinates. Compare the two always-visible windows using one face observation stream and separate coordinate models. The chamber center in Diagnostics should track each portal rectangle as it scrolls.
 7. Capture an initial diagnostic JSON and note any errors before beginning measurements.
 
 ## Stage A: baseline
@@ -75,7 +75,7 @@ The schema example in docs is deliberately marked **assumed**, so the reference 
 
 ## Stage E: gaze (external research path)
 
-Live gaze inference and automated fixation UI remain unavailable. Use docs/GAZE.md to validate a genuine estimator before collecting rays. Export observations with camera-frame origins/directions, mm screen targets, target ID, quality, heldOut and provenance. Four corner targets train; the center target is withheld. Repeated center samples from the same recording are not an independent subject replication.
+Live gaze inference and automated fixation UI remain unavailable. The external-ray fitter is operational, but it does not produce its own gaze directions. Use docs/GAZE.md to validate a genuine estimator before collecting rays. Export observations with camera-frame origins/directions, mm screen targets, target ID, quality, heldOut and provenance. Four corner targets train; the center target is withheld. Repeated center samples from the same recording are not an independent subject replication.
 
 Import observations in Calibration. Confirm rejected, out-of-bounds, reversed-ray or ill-conditioned fits cannot change the baseline. An accepted translation must improve the separate target, then be tested at new positions/distances. Do not characterize external gaze accuracy from a synthetic fit.
 
@@ -95,7 +95,7 @@ Extract camera startup events, card duration and repeated measurement effort. Ga
 | Offline after asset preparation | Local model/WASM available; fonts may fall back |
 | Rotate phone | Live calibrated rendering suspends; return to portrait and recheck placement |
 | Pinch/page zoom; display zoom | Suspension or profile incompatibility; repeat scale calibration |
-| Collapse/expand Safari bars or open keyboard | Record viewport change; card-mode placement must be reconfirmed |
+| Collapse/expand Safari bars or open keyboard | Record viewport change; selected card-scale placement must be reconfirmed |
 | Dynamic Island and safe areas | Controls remain usable; diagnostic inset data recorded; no claims that safe-area CSS gives camera optical center |
 | Camera format/crop changes | Format event and trial boundary; incompatible reference rejected |
 | Unobserved focus/stabilization changes | Known limitation; compare reference validity independently |
@@ -106,7 +106,7 @@ Extract camera startup events, card duration and repeated measurement effort. Ga
 | Slow inference | One frame in flight; worker preserves UI; fallback may block; record backend and actual timing |
 | 10–20 minute thermal run | Export periodic trials and diagnostics; report rate changes and crashes, if any |
 | Background and return | Camera state resets safely; retry required if the stream ended |
-| Multiple portal positions / scroll | Shared eye model, independently updated aperture rectangles |
+| Multiple portal positions / scroll | Shared camera observations, independent display models, scene centers and aperture rectangles updated together |
 | Export and reload | Profile persists; exported trials reimport; memory-only unexported trials are not recoverable |
 
 No row in this hardware matrix is marked passed until someone performs it on the physical iPhone.

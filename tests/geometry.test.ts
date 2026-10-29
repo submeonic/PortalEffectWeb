@@ -21,6 +21,13 @@ import {
   validateIntrinsics,
 } from "../src/geometry/intrinsics";
 import type { Viewport } from "../src/types";
+import {
+  resolveModel,
+  modelEye,
+  modelBounds,
+  UNKNOWN_SCALE,
+} from "../src/geometry/coordinate-model";
+import { newProfile } from "../src/storage/profiles";
 const v: Viewport = {
   screenWidth: 402,
   screenHeight: 874,
@@ -35,6 +42,71 @@ const v: Viewport = {
   originY: 70,
 };
 describe("physical geometry", () => {
+  it("keeps unknown-device priors independent of reference placement", () => {
+    const p = newProfile(v);
+    p.viewport.originY = 65;
+    p.transform.translation = { x: 7, y: 50, z: 3 };
+    p.transform.provenance = "user-entered placement";
+    const known = resolveModel(
+      { device: "reference", card: false, gaze: false },
+      p,
+      v,
+    );
+    const unknown = resolveModel(
+      { device: "unknown", card: false, gaze: false },
+      p,
+      v,
+    );
+    expect(known.cameraToScreen.translation).toEqual({ x: 7, y: 50, z: 3 });
+    expect(unknown.mmPerCss).toBe(UNKNOWN_SCALE);
+    expect(unknown.cameraToScreen.translation).toEqual({
+      x: 0,
+      y: (874 * UNKNOWN_SCALE) / 2,
+      z: 0,
+    });
+    expect(unknown.viewport.originY).toBe(0);
+  });
+  it("applies saved scale and gaze correction to the physical model", () => {
+    const p = newProfile(v);
+    p.cards.push({
+      id: "card",
+      timestamp: "now",
+      widthCss: 300,
+      initialWidthCss: 300,
+      mmPerCss: 0.2,
+      durationMs: 1000,
+      viewport: v,
+    });
+    p.mmPerCss = 0.2;
+    p.gaze = {
+      accepted: true,
+      delta: { x: 3, y: -4 },
+      validationBefore: 8,
+      validationAfter: 2,
+    };
+    const baseline = resolveModel(
+      { device: "unknown", card: false, gaze: false },
+      p,
+      v,
+    );
+    const refined = resolveModel(
+      { device: "unknown", card: true, gaze: true },
+      p,
+      v,
+    );
+    expect(refined.mmPerCss).toBe(0.2);
+    expect(
+      modelEye({ x: 0, y: 0, z: 400 }, refined).x -
+        modelEye({ x: 0, y: 0, z: 400 }, baseline).x,
+    ).toBe(3);
+    const r = { left: 101, right: 301, top: 267, bottom: 467 };
+    expect(
+      modelBounds(r, refined).right - modelBounds(r, refined).left,
+    ).toBeCloseTo(40);
+    expect(refined.cameraToScreen.translation.y).toBeCloseTo(
+      (874 * 0.2) / 2 - 4,
+    );
+  });
   it("uses rotated ID-1 dimensions without nominal correction", () => {
     expect(CARD).toEqual({ width: 53.98, height: 85.6 });
     expect(cardScale(300)).toBeCloseTo(0.179933333333, 10);

@@ -633,3 +633,255 @@ body.blind .intro p {
   pointer-events: none;
   transform: none;
 }
+/* The comparison is the primary instrument; other controls remain available below. */
+.comparison-intro {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+.comparison-intro h1 {
+  font-size: clamp(25px, 3vw, 40px);
+  margin-bottom: 0;
+}
+.comparison-intro .eyebrow {
+  margin-bottom: 8px;
+}
+.comparison-intro p {
+  max-width: 360px;
+  margin: 0;
+  font-size: 12px;
+}
+.tracking-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+.tracking-bar p {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+}
+.tracking-bar button {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+.tracking-bar span {
+  font-size: 10px;
+  color: var(--mint);
+  letter-spacing: 0.7px;
+}
+.comparison-stack {
+  display: grid;
+  gap: 18px;
+  max-width: 850px;
+  margin: auto;
+}
+.comparison-window {
+  min-width: 0;
+}
+.window-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 1.3px;
+  padding: 5px 2px 7px;
+}
+.window-heading b {
+  color: var(--mint);
+}
+.window-heading span {
+  color: var(--muted);
+  font-size: 9px;
+}
+.window-config {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 8px;
+}
+.window-config label {
+  margin: 0;
+  font-size: 11px;
+}
+.window-config label:first-child {
+  flex: 1;
+  min-width: 190px;
+}
+.window-config select {
+  min-height: 34px;
+  margin-top: 4px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+.window-config .check {
+  white-space: nowrap;
+  align-items: center;
+}
+.window-config input[type="checkbox"] {
+  margin: 0;
+}
+.availability {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.2;
+}
+.comparison-window .portal {
+  height: 250px;
+  border-width: 5px;
+}
+.window-metadata {
+  margin-top: 0;
+}
+.window-metadata summary {
+  padding: 7px 1px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.window-metadata pre {
+  margin: 0;
+  max-height: 250px;
+}
+.comparison-settings {
+  max-width: 850px;
+  margin: 16px auto 0;
+}
+.comparison-settings summary {
+  color: var(--mint);
+}
+.comparison-settings .control-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 20px;
+  padding: 16px;
+}
+.comparison-settings label {
+  margin: 0;
+}
+.comparison-settings .sim-controls {
+  grid-column: 1 / -1;
+}
+.comparison-settings #eye-readout {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.comparison-settings .sim-controls label {
+  margin: 12px 0;
+}
+body.blind .window-config,
+body.blind .window-metadata,
+body.blind .comparison-settings {
+  visibility: hidden;
+}
+@media (max-width: 800px) {
+  main {
+    padding-top: 17px;
+  }
+  .comparison-intro {
+    display: block;
+    margin-bottom: 11px;
+  }
+  .comparison-intro h1 {
+    font-size: 25px;
+  }
+  .comparison-intro p {
+    display: none;
+  }
+  .tracking-bar {
+    padding: 7px 9px;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .tracking-bar p {
+    flex-basis: 100%;
+    line-height: 1.3;
+  }
+  .tracking-bar span {
+    margin-left: auto;
+    font-size: 8px;
+  }
+  .comparison-stack {
+    gap: 9px;
+  }
+  .window-heading {
+    padding: 2px 0 4px;
+  }
+  .window-config {
+    gap: 5px 10px;
+    margin-bottom: 6px;
+  }
+  .window-config label:first-child {
+    flex-basis: 100%;
+  }
+  .window-config select {
+    margin-top: 2px;
+    min-height: 32px;
+  }
+  .window-config .check {
+    font-size: 10px;
+  }
+  .comparison-window .portal {
+    height: min(30dvh, 245px);
+    min-height: 180px;
+    border-width: 4px;
+  }
+  .comparison-settings .control-panel {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 800px) {
+  .comparison-intro .eyebrow {
+    margin-bottom: 5px;
+  }
+  .comparison-intro h1 {
+    font-size: 22px;
+  }
+  .tracking-bar p {
+    flex-basis: auto;
+    font-size: 10px;
+  }
+  .tracking-bar span {
+    display: none;
+  }
+  .tracking-bar button {
+    font-size: 10px;
+  }
+  .window-config label:first-child {
+    display: flex;
+    flex-basis: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .window-config select {
+    width: auto;
+    flex: 1;
+    max-width: 235px;
+    margin-top: 0;
+  }
+  .comparison-window .portal {
+    height: min(22dvh, 200px);
+    min-height: 165px;
+  }
+}
+.portal.suspended::after {
+  content: "Card placement changed. Confirm in Calibration.";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 20px;
+  background: #10171cdd;
+  color: var(--mint);
+  font-size: 12px;
+}

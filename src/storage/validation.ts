@@ -43,6 +43,18 @@ export function validateTrials(value: unknown): Trial[] {
       throw Error("Invalid trial");
     validateProfile(t.profile);
     validateCondition(t.condition);
+    if (
+      t.windowModels &&
+      (!Array.isArray(t.windowModels) ||
+        t.windowModels.length !== 2 ||
+        t.windowModels.some(
+          (m) =>
+            !["reference", "unknown"].includes(m.device) ||
+            typeof m.card !== "boolean" ||
+            typeof m.gaze !== "boolean",
+        ))
+    )
+      throw Error("Invalid comparison window configuration");
     for (const s of t.samples) {
       const o = s.observation;
       if (
@@ -61,6 +73,10 @@ export function validateTrials(value: unknown): Trial[] {
         ) ||
         !vector(s.raw) ||
         !vector(s.filtered) ||
+        (s.windowEyes !== undefined &&
+          (!Array.isArray(s.windowEyes) ||
+            s.windowEyes.length !== 2 ||
+            !s.windowEyes.every(vector))) ||
         !(
           s.referenceDistanceMm === null ||
           (Number.isFinite(s.referenceDistanceMm) && s.referenceDistanceMm > 0)

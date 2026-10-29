@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 test("real MediaPipe inference on a known portrait fixture produces metric pose", async ({
   page,
 }) => {
@@ -82,6 +83,13 @@ test("camera pipeline uses worker inference and records replayable fixture obser
   await page.waitForTimeout(900);
   await page.locator("#stop-trial").click();
   await expect(page.locator("#trial-list")).toContainText("camera");
+  const download = page.waitForEvent("download");
+  await page.locator("#export-json").click();
+  const session = JSON.parse(await readFile(await (await download).path(), "utf8"));
+  const sample = session.trials[0].samples.find((s: { raw: unknown }) => s.raw);
+  expect(session.trials[0].windowModels).toHaveLength(2);
+  expect(sample.windowEyes).toHaveLength(2);
+  expect(sample.raw).toEqual(sample.windowEyes[0]);
   await page.locator("#run-paired").click();
   await expect(page.locator("#paired-results")).toContainText(
     "matchedIndependentErrors",

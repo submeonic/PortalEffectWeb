@@ -1,6 +1,6 @@
 # Gaze model investigation and integration boundary
 
-Investigated 2026-10-28. No live gaze model or pretend iris-to-gaze proxy is included. The portal does not depend on ONNX Runtime. Genuine external ray import and translation fitting are implemented.
+Investigated 2026-10-28 and revisited 2026-10-29. No live gaze model or pretend iris-to-gaze proxy is included. The portal does not depend on ONNX Runtime. Genuine external ray import and translation fitting are implemented. A saved accepted X/Y correction is now optional on either comparison window; it does not overwrite the baseline transform. The fit baseline is Unknown Device with card scale when saved, otherwise its generic scale.
 
 | Candidate | Verified from primary material | Remaining work |
 |---|---|---|
@@ -10,7 +10,9 @@ Investigated 2026-10-28. No live gaze model or pretend iris-to-gaze proxy is inc
 
 Sources: [L2CS-Net official repository](https://github.com/Ahmednull/L2CS-Net), [MobileGaze implementation](https://github.com/yakhyo/gaze-estimation), [Arm artifact card](https://huggingface.co/Arm/mobilegaze-mobilenet-v2-int8-onnx/blob/main/README.md), [ONNX Runtime Web documentation](https://onnxruntime.ai/docs/tutorials/web/).
 
-The Arm artifact looks plausible for a follow-on experiment. A declared conversion license does not independently settle every upstream training-data restriction. No weights were redistributed, no Safari compatibility or gaze accuracy is claimed, and no memory/inference measurements were invented. Hardware validation is the current blocking evidence for promoting a live gaze path into this research prototype.
+The Arm artifact looks plausible for a follow-on experiment. Its [configuration](https://huggingface.co/Arm/mobilegaze-mobilenet-v2-int8-onnx/blob/main/config.yaml) specifies a 448×448 RGB face crop, ImageNet normalization, and softmax expectation over 90 yaw/pitch bins. The published validation is only an x86-64 ONNX Runtime interface smoke test, not an iPhone Safari test. The [upstream MobileGaze repository](https://github.com/yakhyo/gaze-estimation) reports 13.07° mean angular error for MobileNet V2 on its Gaze360 evaluation; that is not a measurement of this converted checkpoint or our phone. At 400 mm, a 13° angular miss could correspond to roughly 92 mm of screen displacement, far above our 10 mm held-out gate. That calculation illustrates the risk; it does not predict actual device error.
+
+This is an **unfinished integration**, not evidence that ordinary browsers cannot run gaze inference. ONNX Runtime Web documents browser execution, and the model has a concrete ONNX artifact. The missing gates are a verified unmirrored face crop and yaw/pitch-to-camera-vector convention, artifact and upstream terms review, actual Mobile Safari graph/provider and memory benchmarks, and independent angular/fixation accuracy tests. Without these, enabling a four-corner UI could produce a precise-looking but physically wrong transform. No weights were redistributed and no Safari compatibility, gaze accuracy, or memory measurements are claimed. Alternative research paths are an externally validated 3D ray importer (available now), a dedicated on-device model integration and iPhone validation experiment, or independent physical camera-placement measurement. A 2D screen predictor trained on the same fixation targets would not test the stated transform hypothesis.
 
 ## Required next integration experiment
 
@@ -26,7 +28,7 @@ The automatic fixation collector is intentionally not exposed as if it were oper
 
 ## External observation schema
 
-Import a JSON array, or `{ "observations": [...] }`. Example illustrates structure only; use a genuinely measured direction:
+Import a JSON array, or `{ "observations": [...] }`. `target` must use the Unknown Device display frame and scale selected for fitting: the saved card scale when available, otherwise the explicit generic prior. Applying a saved correction under a different scale or the reference condition is an extrapolation, shown in the model provenance. Example illustrates structure only; use a genuinely measured direction:
 
 ```json
 {

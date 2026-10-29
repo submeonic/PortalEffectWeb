@@ -8,7 +8,6 @@ import { Diagnostics, viewport } from "./camera/diagnostics";
 import { estimate } from "./tracking/pose";
 import { PoseFilter } from "./filtering/filters";
 import {
-  cssRect,
   NOMINAL_SCALE,
   CARD,
   cardScale,
@@ -26,6 +25,13 @@ import {
 import { stats, summarize, paired, csv } from "./experiments/metrics";
 import { syntheticReport } from "./simulation/synthetic";
 import { fitTranslation, type GazeObservation } from "./optimization/gaze-fit";
+import {
+  modelBounds,
+  modelEye,
+  resolveModel,
+  savedGazeDelta,
+  type WindowModel,
+} from "./geometry/coordinate-model";
 import type {
   Vec3,
   Condition,
@@ -46,6 +52,11 @@ const diagnostics = new Diagnostics(),
   capture = new Capture(),
   tracker = new Tracker(),
   filter = new PoseFilter();
+const windowModels: WindowModel[] = [
+  { device: "reference", card: false, gaze: false },
+  { device: "unknown", card: false, gaze: false },
+];
+let cameraEye: Vec3 | null = null;
 let live = false,
   starting = false,
   lastGood = 0,
@@ -94,13 +105,6 @@ function notify(message: string) {
 function view() {
   return viewport(profile.viewport.originX, profile.viewport.originY);
 }
-function scale() {
-  return condition.display === "nominal"
-    ? NOMINAL_SCALE
-    : condition.display === "generic"
-      ? 0.18
-      : profile.mmPerCss;
-}
 function save() {
   try {
     saveProfile(profile);
@@ -130,13 +134,7 @@ document
   .querySelectorAll<HTMLButtonElement>("[data-page]")
   .forEach((b) => (b.onclick = () => go(b.dataset.page!)));
 function sync() {
-  for (const id of [
-    "scene",
-    "rendering",
-    "filter",
-    "depth",
-    "display",
-  ] as const)
+  for (const id of ["scene", "rendering", "filter", "depth"] as const)
     $<HTMLSelectElement>(id).value = condition[id];
   $<HTMLInputElement>("iris-diameter").value = String(condition.irisDiameter);
   $<HTMLInputElement>("face-scale").value = String(condition.faceScale);
@@ -148,11 +146,12 @@ function sync() {
     );
   $<HTMLInputElement>("origin-x").value = String(profile.viewport.originX);
   $<HTMLInputElement>("origin-y").value = String(profile.viewport.originY);
-  $("scale-value").textContent = scale().toFixed(5);
+  const savedScale = profile.cards.at(-1)?.mmPerCss;
+  $("scale-value").textContent = savedScale?.toFixed(5) ?? "—";
   $("calibration-status").textContent =
-    condition.display === "card"
-      ? `Measured ${profile.timestamp}. Difference from nominal: ${((scale() / NOMINAL_SCALE - 1) * 100).toFixed(2)}%. This is agreement, not absolute accuracy.`
-      : "Nominal or generic geometry is an assumption, not a measurement.";
+    savedScale !== undefined
+      ? `Latest card measurement. Difference from iPhone nominal: ${((savedScale / NOMINAL_SCALE - 1) * 100).toFixed(2)}%. This is agreement, not absolute accuracy.`
+      : "No physical scale measurement saved. The comparison windows use explicit priors until a card is measured.";
   $("intrinsics-status").textContent = profile.intrinsics
     ? `${profile.intrinsics.width} × ${profile.intrinsics.height} · ${profile.intrinsics.provenance}`
     : "No independent intrinsic reference supplied.";
@@ -160,33 +159,96 @@ function sync() {
   $("card-results").textContent =
     `${s.n} card measurements · mean ${s.mean?.toFixed(5) ?? "—"} mm/px · SD ${s.sd?.toFixed(5) ?? "—"}`;
   portals.forEach((p) => p.setScene(condition.scene));
+  syncModels();
+}
+function syncModels() {
+  const keys = ["a", "b"];
+  windowModels.forEach((selection, i) => {
+    const key = keys[i];
+    const card = $<HTMLInputElement>("card-" + key);
+    const gaze = $<HTMLInputElement>("gaze-" + key);
+    card.disabled = !profile.cards.length;
+    gaze.disabled = !savedGazeDelta(profile);
+    $("availability-" + key).textContent = [
+      card.disabled
+        ? "Scale: complete card calibration"
+        : selection.card && placementInvalid
+          ? "Scale: confirm placement in Calibration"
+          : "",
+      gaze.disabled ? "Gaze: import accepted rays" : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    if (card.disabled) selection.card = false;
+    if (gaze.disabled) selection.gaze = false;
+    $<HTMLSelectElement>("device-" + key).value = selection.device;
+    card.checked = selection.card;
+    gaze.checked = selection.gaze;
+    const model = resolveModel(selection, profile, viewport());
+    const displayEye = cameraEye ? modelEye(cameraEye, model) : eye;
+    $("model-" + key).textContent = JSON.stringify(
+      {
+        eyeMm: displayEye,
+        mmPerCss: model.mmPerCss,
+        scaleSource: model.scaleSource,
+        cameraToScreen: model.cameraToScreen,
+        contentOriginCss: {
+          x: model.viewport.originX,
+          y: model.viewport.originY,
+        },
+        contentOriginSource:
+          selection.device === "reference"
+            ? "saved placement assumption"
+            : "generic zero assumption",
+      },
+      null,
+      2,
+    );
+  });
+}
+for (const [i, key] of ["a", "b"].entries()) {
+  $<HTMLSelectElement>("device-" + key).onchange = () => {
+    windowModels[i].device = $<HTMLSelectElement>("device-" + key)
+      .value as WindowModel["device"];
+    if (current) finishTrial();
+    syncModels();
+    diagnostics.event("window-model", { window: key, ...windowModels[i] });
+  };
+  for (const option of ["card", "gaze"] as const)
+    $<HTMLInputElement>(option + "-" + key).onchange = () => {
+      windowModels[i][option] = $<HTMLInputElement>(option + "-" + key).checked;
+      if (option === "card" && windowModels[i].card && live) {
+        const currentViewport = view();
+        if (
+          currentViewport.width !== profile.viewport.width ||
+          currentViewport.height !== profile.viewport.height ||
+          !displayCompatible(profile.viewport, currentViewport)
+        )
+          placementInvalid = true;
+      }
+      if (current) finishTrial();
+      syncModels();
+      diagnostics.event("window-model", { window: key, ...windowModels[i] });
+    };
 }
 function changed() {
   lastEstimate = null;
   if (current) finishTrial();
   filter.reset();
+  cameraEye = null;
   portals.forEach((p) => p.recenter());
   sync();
   diagnostics.event("condition", condition);
 }
-for (const id of ["scene", "rendering", "filter", "depth", "display"] as const)
+for (const id of ["scene", "rendering", "filter", "depth"] as const)
   $<HTMLSelectElement>(id).onchange = () => {
     const value = $<HTMLSelectElement>(id).value;
-    if (id === "display" && value === "card" && !profile.cards.length) {
-      notify("Take a card measurement first.");
-      sync();
-      return;
-    }
     if (id === "depth" && value === "iris-reference" && !profile.intrinsics) {
       notify("Import a compatible intrinsic reference first.");
       sync();
       return;
     }
     (condition as unknown as Record<string, string>)[id] = value;
-    if (id === "display") {
-      profile.screenMode = condition.display;
-      save();
-    }
     changed();
   };
 for (const [id, key] of [
@@ -222,6 +284,7 @@ function stopCamera() {
   invalidated = false;
   starting = false;
   filter.reset();
+  cameraEye = null;
   $<HTMLButtonElement>("start-camera").disabled = false;
   $("start-camera").hidden = false;
   $("stop-camera").hidden = true;
@@ -290,12 +353,14 @@ function observe(o: Observation) {
   if (result) {
     if (o.time - lastGood > 500) filter.reset();
     lastGood = o.time;
-    filtered = filter.update(
-      result.eyeScreen,
+    cameraEye = filter.update(
+      result.eyeCamera,
       o.time,
       condition.filter,
       condition.predictionMs,
     );
+    const primary = resolveModel(windowModels[0], profile, viewport());
+    filtered = modelEye(cameraEye, primary);
     eye = filtered;
   } else {
     diagnostics.event("tracking-loss", {
@@ -304,10 +369,19 @@ function observe(o: Observation) {
     });
   }
   if (current) {
+    const modelEyes = windowModels.map((selection) =>
+      result
+        ? modelEye(
+            result.eyeCamera,
+            resolveModel(selection, profile, viewport()),
+          )
+        : null,
+    );
     current.samples.push({
       observation: o,
-      raw: result?.eyeScreen ?? null,
+      raw: modelEyes[0],
       filtered,
+      windowEyes: modelEyes,
       faceDepth: result?.faceDepth ?? null,
       irisDepth: result?.irisDepth ?? null,
       referenceDistanceMm: reference(),
@@ -345,6 +419,7 @@ function animate(time: number) {
       z: Number($<HTMLInputElement>("sz").value),
     };
   } else if (time - lastGood > 800) {
+    cameraEye = null;
     eye = {
       ...eye,
       x: eye.x * 0.97,
@@ -370,6 +445,7 @@ function animate(time: number) {
       observation: o,
       raw: { ...eye },
       filtered: { ...eye },
+      windowEyes: [{ ...eye }, { ...eye }],
       faceDepth: null,
       irisDepth: null,
       referenceDistanceMm: null,
@@ -379,10 +455,15 @@ function animate(time: number) {
   }
   let rendered = false;
   if (activePage === "demo" && (!live || !invalidated)) {
-    for (const p of portals) {
+    for (const [i, p] of portals.entries()) {
       const r = p.renderer.domElement.getBoundingClientRect();
+      const cardSuspended = live && windowModels[i].card && placementInvalid;
+      p.element.classList.toggle("suspended", cardSuspended);
+      if (cardSuspended) continue;
       if (r.width && r.height && r.bottom > 0 && r.top < innerHeight) {
-        p.render(eye, cssRect(r, scale(), view()), condition);
+        const model = resolveModel(windowModels[i], profile, viewport());
+        const windowEye = live && cameraEye ? modelEye(cameraEye, model) : eye;
+        p.render(windowEye, modelBounds(r, model), condition);
         rendered = true;
       }
     }
@@ -405,24 +486,32 @@ function animate(time: number) {
 requestAnimationFrame(animate);
 function geometryChange() {
   const v = view();
+  const cardActive = windowModels.some((m) => m.card);
   if (
     live &&
-    condition.display === "card" &&
-    (v.height !== profile.viewport.height || v.width !== profile.viewport.width)
+    cardActive &&
+    (v.height !== profile.viewport.height ||
+      v.width !== profile.viewport.width ||
+      !displayCompatible(profile.viewport, v))
   )
     placementInvalid = true;
   invalidated =
-    !displayCompatible(profile.viewport, v) ||
-    v.orientation.startsWith("landscape");
-  if (condition.display !== "card")
-    invalidated = v.scale !== 1 || v.orientation.startsWith("landscape");
-  if (condition.display === "card" && placementInvalid) invalidated = true;
+    v.scale !== 1 ||
+    v.orientation.startsWith("landscape") ||
+    (windowModels.some((m) => m.device === "reference") &&
+      (v.dpr !== profile.viewport.dpr ||
+        v.screenWidth !== profile.viewport.screenWidth ||
+        v.screenHeight !== profile.viewport.screenHeight));
   if (!live) invalidated = false;
   diagnostics.event("viewport-change", v);
   if (current) finishTrial();
   if (invalidated)
     notify(
-      "Calibrated rendering suspended: return to portrait and 100% zoom, or confirm content placement in Calibration after display changes.",
+      "Rendering suspended: return to portrait and 100% zoom, and check display configuration.",
+    );
+  else if (placementInvalid)
+    notify(
+      "Card-scale windows paused after a viewport change. Confirm content placement in Calibration; other windows remain active.",
     );
   else if (live) {
     notify(
@@ -442,12 +531,15 @@ video.addEventListener("resize", () => {
   });
   if (current) finishTrial();
 });
-$("second-toggle").addEventListener("toggle", () => portals[1]?.recenter());
 function snapshot() {
   return {
     ...diagnostics.snapshot(),
     calibration: profile,
     condition,
+    windowModels: windowModels.map((selection) => ({
+      ...selection,
+      resolved: resolveModel(selection, profile, viewport()),
+    })),
     camera: {
       requested: capture.requested,
       settings:
@@ -462,6 +554,7 @@ function snapshot() {
     portals: portals.map((p) => ({
       rect: p.renderer.domElement.getBoundingClientRect().toJSON(),
       metric: p.bounds,
+      sceneCenter: p.sceneCenter,
       frustum: p.lastFrustum,
     })),
     performance: {
@@ -481,9 +574,11 @@ function snapshot() {
 setInterval(() => {
   $("mode-label").textContent = invalidated
     ? "GEOMETRY SUSPENDED"
-    : live
-      ? "LIVE / APPROXIMATE GEOMETRY"
-      : "SIMULATED VIEW";
+    : placementInvalid && windowModels.some((m) => m.card)
+      ? "CARD PLACEMENT NEEDS CONFIRMATION"
+      : live
+        ? "LIVE / APPROXIMATE GEOMETRY"
+        : "SIMULATED VIEW";
   $("fps").textContent = renderIntervals.length
     ? (1000 / stats(renderIntervals).mean!).toFixed(1)
     : "—";
@@ -501,6 +596,7 @@ setInterval(() => {
     : "Camera is off";
   if (activePage === "diagnostics")
     $("diagnostic-data").textContent = JSON.stringify(snapshot(), null, 2);
+  if (activePage === "demo") syncModels();
 }, 700);
 function cardUpdate() {
   const width = Number($<HTMLInputElement>("card-width").value);
@@ -644,24 +740,35 @@ importFile("import-gaze", (data) => {
     throw Error(
       "Supply genuine gaze observations with provenance, not simulated rays",
     );
-  gazeFit = fitTranslation(observations, profile.transform);
+  // Prefer the independent card scale when available. Imported target
+  // coordinates must use this physical display frame.
+  const baseline = resolveModel(
+    { device: "unknown", card: profile.cards.length > 0, gaze: false },
+    profile,
+    viewport(),
+  ).cameraToScreen;
+  gazeFit = fitTranslation(observations, baseline);
   $("gaze-result").textContent = JSON.stringify(gazeFit, null, 2);
   $<HTMLButtonElement>("apply-gaze").disabled = !gazeFit.accepted;
 });
 $("apply-gaze").onclick = () => {
   if (!gazeFit?.accepted) return;
   if (current) finishTrial();
-  if (JSON.stringify(profile.transform) !== JSON.stringify(gazeFit.baseline)) {
+  const baseline = resolveModel(
+    { device: "unknown", card: profile.cards.length > 0, gaze: false },
+    profile,
+    viewport(),
+  ).cameraToScreen;
+  if (JSON.stringify(baseline) !== JSON.stringify(gazeFit.baseline)) {
     notify("Baseline changed. Refit the gaze observations first.");
     return;
   }
   profile.gaze = gazeFit;
-  profile.transform = gazeFit.transform;
   save();
   changed();
   $<HTMLButtonElement>("apply-gaze").disabled = true;
   notify(
-    "Validated translation applied. Repeat with independent head positions.",
+    "Gaze correction saved for optional comparison. Repeat at a new head position before treating it as accurate.",
   );
 };
 const guides: Record<string, string> = {
@@ -694,16 +801,26 @@ function startTrial(label?: string) {
     return;
   }
   trialStarted = performance.now();
+  const primaryModel = resolveModel(windowModels[0], profile, viewport());
+  const primaryMode = windowModels[0].card
+    ? "card"
+    : windowModels[0].device === "reference"
+      ? "nominal"
+      : "generic";
   current = {
     version: 1,
     id: crypto.randomUUID(),
     label: label ?? $<HTMLInputElement>("trial-label").value,
     start: new Date().toISOString(),
-    condition: structuredClone(condition),
+    condition: structuredClone({ ...condition, display: primaryMode }),
+    windowModels: structuredClone(windowModels),
     profile: structuredClone({
       ...profile,
-      screenMode: condition.display,
-      mmPerCss: scale(),
+      name: `Window A · ${windowModels[0].device === "reference" ? "iPhone 16 Pro reference" : "Unknown Device"}`,
+      screenMode: primaryMode,
+      mmPerCss: primaryModel.mmPerCss,
+      transform: primaryModel.cameraToScreen,
+      viewport: primaryModel.viewport,
     }),
     diagnostics: structuredClone(snapshot()),
     samples: [],
@@ -828,6 +945,7 @@ function session() {
     },
     profile,
     condition,
+    windowModels,
     trials,
     summary: trials.map(summarize),
     diagnostics: structuredClone(snapshot()),

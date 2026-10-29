@@ -21,7 +21,7 @@ export function newProfile(v: Viewport): Profile {
     timestamp: new Date().toISOString(),
     screenMode: "nominal",
     mmPerCss: NOMINAL_SCALE,
-    viewport: v,
+    viewport: { ...v },
     transform: defaultTransform(),
     cards: [],
   };

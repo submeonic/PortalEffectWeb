@@ -6,6 +6,7 @@ test("renders WebGL portal and responds to simulated eye movement", async ({
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(page.locator("#portal-main canvas")).toBeVisible();
+  await page.locator(".comparison-settings summary").click();
   await page.locator("#sx").fill("45");
   await expect(page.locator("#eye-readout")).toContainText("X 45");
   await page.locator("#scene").selectOption("tunnel");
@@ -14,6 +15,30 @@ test("renders WebGL portal and responds to simulated eye movement", async ({
     fullPage: true,
   });
   expect(errors).toEqual([]);
+});
+test("both visible portals remain attached to their scrolling apertures", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator("#portal-second canvas")).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 180));
+  await page.waitForTimeout(150);
+  await page.getByRole("button", { name: "Diagnostics", exact: true }).click();
+  await expect(page.locator("#diagnostic-data")).toContainText("sceneCenter");
+  const snapshot = JSON.parse(
+    (await page.locator("#diagnostic-data").textContent()) ?? "{}",
+  );
+  for (const portal of snapshot.portals) {
+    expect(portal.frustum.near).toBe(1);
+    expect(portal.sceneCenter.x).toBeCloseTo(
+      (portal.metric.left + portal.metric.right) / 2,
+      5,
+    );
+    expect(portal.sceneCenter.y).toBeCloseTo(
+      (portal.metric.top + portal.metric.bottom) / 2,
+      5,
+    );
+  }
 });
 test.describe("portrait device", () => {
   test.use({
@@ -36,6 +61,13 @@ test.describe("portrait device", () => {
     expect(size!.width / size!.height).toBeCloseTo(53.98 / 85.6, 3);
     await page.locator("#save-card").click();
     await expect(page.locator("#scale-value")).toHaveText("0.17993");
+    await page.getByRole("button", { name: "Portal", exact: true }).click();
+    await expect(page.locator("#card-b")).toBeEnabled();
+    await page.locator("#card-b").check();
+    expect(
+      JSON.parse((await page.locator("#model-b").textContent()) ?? "{}")
+        .mmPerCss,
+    ).toBeCloseTo(53.98 / 300, 4);
     await page.reload();
     await page
       .getByRole("button", { name: "Calibration", exact: true })

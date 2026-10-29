@@ -107,6 +107,7 @@ export type Sample = {
   observation: Observation;
   raw: Vec3 | null;
   filtered: Vec3 | null;
+  windowEyes?: (Vec3 | null)[];
   faceDepth: number | null;
   irisDepth: number | null;
   referenceDistanceMm: number | null;
@@ -119,6 +120,11 @@ export type Trial = {
   start: string;
   end?: string;
   condition: Condition;
+  windowModels?: {
+    device: "reference" | "unknown";
+    card: boolean;
+    gaze: boolean;
+  }[];
   profile: Profile;
   diagnostics: unknown;
   samples: Sample[];
