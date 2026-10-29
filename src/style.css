@@ -280,6 +280,19 @@ p {
 .two-col > .panel {
   margin: 0;
 }
+.placement-recovery {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid var(--mint);
+  border-radius: 8px;
+  background: #102c2d;
+}
+.placement-recovery strong {
+  color: var(--mint);
+}
+.placement-recovery button {
+  margin: 4px 0;
+}
 label {
   display: block;
   font-size: 12px;
@@ -874,7 +887,7 @@ body.blind .comparison-settings {
   }
 }
 .portal.suspended::after {
-  content: "Card placement changed. Confirm in Calibration.";
+  content: "Card scale paused. Review in Calibration.";
   position: absolute;
   inset: 0;
   display: grid;

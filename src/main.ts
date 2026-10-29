@@ -12,6 +12,7 @@ import {
   CARD,
   cardScale,
   displayCompatible,
+  cardPlacementCompatible,
 } from "./geometry/math";
 import { validateIntrinsics, compatible } from "./geometry/intrinsics";
 import {
@@ -129,6 +130,7 @@ function go(page: string) {
     .querySelectorAll<HTMLButtonElement>("[data-page]")
     .forEach((b) => b.classList.toggle("active", b.dataset.page === page));
   if (page === "demo") portals.forEach((p) => p.recenter());
+  if (page === "calibration") syncModels();
 }
 document
   .querySelectorAll<HTMLButtonElement>("[data-page]")
@@ -162,6 +164,13 @@ function sync() {
   syncModels();
 }
 function syncModels() {
+  const currentViewport = view();
+  const displayChanged = !displayCompatible(profile.viewport, currentViewport);
+  $("placement-recovery").hidden = !placementInvalid;
+  $("placement-reason").textContent = displayChanged
+    ? "The display size, density, orientation, or zoom changed. Repeat the card measurement before using its scale."
+    : "The browser content width changed. Check that its physical position is the same, then confirm this layout or edit Content origin below.";
+  $<HTMLButtonElement>("confirm-placement").disabled = displayChanged;
   const keys = ["a", "b"];
   windowModels.forEach((selection, i) => {
     const key = keys[i];
@@ -173,7 +182,9 @@ function syncModels() {
       card.disabled
         ? "Scale: complete card calibration"
         : selection.card && placementInvalid
-          ? "Scale: confirm placement in Calibration"
+          ? displayChanged
+            ? "Scale: repeat card measurement"
+            : "Scale: review layout in Calibration"
           : "",
       gaze.disabled ? "Gaze: import accepted rays" : "",
     ]
@@ -217,14 +228,11 @@ for (const [i, key] of ["a", "b"].entries()) {
   for (const option of ["card", "gaze"] as const)
     $<HTMLInputElement>(option + "-" + key).onchange = () => {
       windowModels[i][option] = $<HTMLInputElement>(option + "-" + key).checked;
-      if (option === "card" && windowModels[i].card && live) {
+      if (option === "card" && live) {
         const currentViewport = view();
-        if (
-          currentViewport.width !== profile.viewport.width ||
-          currentViewport.height !== profile.viewport.height ||
-          !displayCompatible(profile.viewport, currentViewport)
-        )
-          placementInvalid = true;
+        placementInvalid =
+          windowModels.some((m) => m.card) &&
+          !cardPlacementCompatible(profile.viewport, currentViewport);
       }
       if (current) finishTrial();
       syncModels();
@@ -487,14 +495,9 @@ requestAnimationFrame(animate);
 function geometryChange() {
   const v = view();
   const cardActive = windowModels.some((m) => m.card);
-  if (
-    live &&
-    cardActive &&
-    (v.height !== profile.viewport.height ||
-      v.width !== profile.viewport.width ||
-      !displayCompatible(profile.viewport, v))
-  )
-    placementInvalid = true;
+  if (live)
+    placementInvalid =
+      cardActive && !cardPlacementCompatible(profile.viewport, v);
   invalidated =
     v.scale !== 1 ||
     v.orientation.startsWith("landscape") ||
@@ -504,20 +507,16 @@ function geometryChange() {
         v.screenHeight !== profile.viewport.screenHeight));
   if (!live) invalidated = false;
   diagnostics.event("viewport-change", v);
-  if (current) finishTrial();
+  syncModels();
+  if (current && (invalidated || placementInvalid)) finishTrial();
   if (invalidated)
     notify(
       "Rendering suspended: return to portrait and 100% zoom, and check display configuration.",
     );
   else if (placementInvalid)
     notify(
-      "Card-scale windows paused after a viewport change. Confirm content placement in Calibration; other windows remain active.",
+      "Card-scale windows paused after a layout change. Open Calibration to review or repeat the measurement; other windows remain active.",
     );
-  else if (live) {
-    notify(
-      "Viewport changed. Recheck content origin if Safari browser controls moved.",
-    );
-  }
 }
 window.addEventListener("resize", geometryChange);
 window.visualViewport?.addEventListener("resize", geometryChange);
@@ -575,7 +574,7 @@ setInterval(() => {
   $("mode-label").textContent = invalidated
     ? "GEOMETRY SUSPENDED"
     : placementInvalid && windowModels.some((m) => m.card)
-      ? "CARD PLACEMENT NEEDS CONFIRMATION"
+      ? "CARD SCALE NEEDS REVIEW"
       : live
         ? "LIVE / APPROXIMATE GEOMETRY"
         : "SIMULATED VIEW";
@@ -667,6 +666,12 @@ $("save-card").onclick = () => {
   notify("Card measurement saved. Repeat to assess consistency.");
 };
 $("save-placement").onclick = () => {
+  if (profile.cards.length && !displayCompatible(profile.viewport, view())) {
+    notify(
+      "Display geometry changed. Repeat the card measurement before saving placement assumptions.",
+    );
+    return;
+  }
   const numbers = [
     "origin-x",
     "origin-y",
@@ -692,6 +697,30 @@ $("save-placement").onclick = () => {
   save();
   changed();
   notify("Placement saved. Record the measurement method in your trial notes.");
+};
+$("confirm-placement").onclick = () => {
+  const currentViewport = view();
+  if (
+    !profile.cards.length ||
+    !displayCompatible(profile.viewport, currentViewport)
+  ) {
+    notify(
+      "Display geometry changed. Repeat the card measurement before using its scale.",
+    );
+    return;
+  }
+  if (current) finishTrial();
+  profile.viewport = currentViewport;
+  placementInvalid = false;
+  save();
+  syncModels();
+  diagnostics.event("placement-confirmed", {
+    viewport: currentViewport,
+    originSource: "saved assumption, not independently measured",
+  });
+  notify(
+    "Current layout confirmed with the saved content-origin assumption. Card scale is available again.",
+  );
 };
 $("export-profile").onclick = () =>
   download("portal-calibration.json", JSON.stringify(profile, null, 2));

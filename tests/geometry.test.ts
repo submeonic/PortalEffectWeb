@@ -11,6 +11,7 @@ import {
   frustum,
   screenIntersection,
   displayCompatible,
+  cardPlacementCompatible,
 } from "../src/geometry/math";
 import { matrixPoint } from "../src/tracking/pose";
 import {
@@ -154,6 +155,11 @@ describe("physical geometry", () => {
     expect(displayCompatible(v, { ...v, height: 720 })).toBe(true);
     expect(displayCompatible(v, { ...v, dpr: 2 })).toBe(false);
     expect(displayCompatible(v, { ...v, scale: 1.1 })).toBe(false);
+  });
+  it("keeps card scale across browser chrome height changes and flags width changes", () => {
+    expect(cardPlacementCompatible(v, { ...v, height: 720 })).toBe(true);
+    expect(cardPlacementCompatible(v, { ...v, width: 390 })).toBe(false);
+    expect(cardPlacementCompatible(v, { ...v, dpr: 2 })).toBe(false);
   });
 });
 describe("off-axis projection", () => {
